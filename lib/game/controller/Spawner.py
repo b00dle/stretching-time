@@ -75,8 +75,13 @@ class Spawner(avango.script.Script):
 			z = spawn.geometry.WorldTransform.value.get_translate().z
 			if z > self.z_vanish:
 				kill_list.append(spawn)
-		self.remove_spawns(kill_list)
-
+		if len(kill_list) > 0: 
+			self.remove_spawns(kill_list)
+			while len(kill_list) > 0:
+				s = kill_list[0]
+				kill_list.pop(0)
+				del s
+			
 	def _auto_spawn(self):
 		''' Spawns one random object inside configured spawn bounds,
 			if number of total spawned objects < self.max_auto_spawns. '''
@@ -107,7 +112,7 @@ class Spawner(avango.script.Script):
 		enemy.rotation_axis.y = random.uniform(0.0,1.0)
 		enemy.rotation_axis.z = random.uniform(0.0,1.0)
 		enemy.rotation_axis.normalize()
-		enemy.setScale(random.uniform(0.5,1.5))
+		#enemy.setScale(random.uniform(0.5,1.5))
 
 		self.spawns.append(enemy)
 
@@ -118,18 +123,20 @@ class Spawner(avango.script.Script):
 
 	def remove_spawn(self, SPAWN):
 		''' Removes an object spawned by this instance. 
-			Returns success of removal. '''
+			Returns success of removal. TODO fix memory leak'''
 		if SPAWN in self.spawns:
 			self.spawns.remove(SPAWN)
-			self.spawn_root.Children.value.remove(SPAWN.geometry)
-			del SPAWN
+			SPAWN.geometry.Parent.value.Children.value.remove(SPAWN.geometry)
+			#self.spawn_root.Children.value.remove(SPAWN.geometry)
 			return True
 		print("FAILURE: Spawn not found (id:", SPAWN.id, ")")
 		return False
 
-	def remove_spawns(self, SPAWNS=[]):
+	def remove_spawns(self, SPAWNS):
 		''' Removes all objects listed in SPAWNS from the list of spawned objects. 
 			Returns True if all list elements where removed successfully. '''
+		if len(SPAWNS) == 0:
+			return True
 		success = True
 		for spawn in SPAWNS:
 			if not self.remove_spawn(spawn):

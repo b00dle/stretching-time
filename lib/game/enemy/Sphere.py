@@ -9,13 +9,8 @@ from lib.game.enemy.Enemy import Enemy
 
 class Sphere(Enemy):
     ''' Simple enemy using Sphere head. '''
-    number_of_instances = 0
-
     def __init__(self):
         self.super(Sphere).__init__()
-
-        self.id = Sphere.number_of_instances
-        Sphere.number_of_instances += 1
 
     def my_constructor(self,
                        PARENT_NODE = None, 
@@ -25,7 +20,7 @@ class Sphere(Enemy):
 
         # create geometry
         self.geometry = _loader.create_geometry_from_file(
-            "sphere_enemy_" + str(Sphere.number_of_instances) + "_geometry",
+            "sphere_enemy_geometry_GOID_"+str(self.get_num_game_objects()),
             "data/objects/sphere.obj",
             avango.gua.LoaderFlags.DEFAULTS
         )

@@ -9,13 +9,8 @@ from lib.game.enemy.Enemy import Enemy
 
 class Box(Enemy):
     ''' Simple enemy using Box head. '''
-    number_of_instances = 0
-
     def __init__(self):
         self.super(Box).__init__()
-
-        self.id = Box.number_of_instances
-        Box.number_of_instances += 1
 
     def my_constructor(self,
                        PARENT_NODE = None, 
@@ -25,7 +20,7 @@ class Box(Enemy):
 
         # create geometry
         self.geometry = _loader.create_geometry_from_file(
-            "box_enemy_" + str(Box.number_of_instances) + "_geometry",
+            "box_enemy_geometry_GOID_"+str(self.get_num_game_objects()),
             "data/objects/cube.obj",
             avango.gua.LoaderFlags.DEFAULTS
         )

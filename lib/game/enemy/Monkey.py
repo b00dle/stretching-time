@@ -9,13 +9,8 @@ from lib.game.enemy.Enemy import Enemy
 
 class Monkey(Enemy):
     ''' Simple enemy using monkey head. '''
-    number_of_instances = 0
-
     def __init__(self):
         self.super(Monkey).__init__()
-
-        self.id = Monkey.number_of_instances
-        Monkey.number_of_instances += 1
 
     def my_constructor(self,
                        PARENT_NODE = None, 
@@ -25,7 +20,7 @@ class Monkey(Enemy):
 
         # create geometry
         self.geometry = _loader.create_geometry_from_file(
-            "monkey_enemy_" + str(Monkey.number_of_instances) + "_geometry",
+            "monkey_enemy_geometry_GOID_"+str(self.get_num_game_objects()),
             "data/objects/monkey.obj",
             avango.gua.LoaderFlags.DEFAULTS
         )

@@ -26,7 +26,6 @@ def start():
     ## init spawner
     game = Game()
     game.my_constructor(SCENE_ROOT = scenegraph.Root.value)
-    game.test()
 
     ## init field connections (dependency graph)
     print_graph(scenegraph.Root.value)
