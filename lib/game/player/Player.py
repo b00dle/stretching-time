@@ -37,6 +37,12 @@ class Player(GameObject):
         # append to parent
         PARENT_NODE.Children.value.append(self.geometry)
 
+    def move(self, TRANSLATE):
+        ''' moves the player by defined traslation. '''
+        self.geometry.Transform.value = avango.gua.make_trans_mat(TRANSLATE) * \
+            self.geometry.Transform.value
+
+
     @field_has_changed(sf_mat)
     def sf_mat_changed(self):
        ''' update transformation '''

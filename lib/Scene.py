@@ -35,6 +35,7 @@ class Scene:
         ## init scene geometries       
         _loader = avango.gua.nodes.TriMeshLoader() # get trimesh loader to load external meshes
 
+        '''
         ## init ground
         self.ground_geometry = _loader.create_geometry_from_file("ground_geometry", "data/objects/cube.obj", avango.gua.LoaderFlags.DEFAULTS)
         self.ground_geometry.Transform.value = \
@@ -43,3 +44,4 @@ class Scene:
         self.ground_geometry.Material.value.set_uniform("ColorMap", "data/textures/ground/bricks_diffuse.jpg")
         self.ground_geometry.Material.value.set_uniform("NormalMap", "data/textures/ground/bricks_normal.jpg")
         PARENT_NODE.Children.value.append(self.ground_geometry)
+        '''

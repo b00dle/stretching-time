@@ -3,37 +3,53 @@
 import avango.daemon
 import os
 
-# functions
+### functions ###
+
+## Initializes AR Track
+def init_art_tracking():
+
+    # create instance of DTrack
+    _dtrack = avango.daemon.DTrack()
+    _dtrack.port = "5000" # ART port
+
+    _dtrack.stations[10] = avango.daemon.Station('tracking-art-glasses-1') # 3D-TV wired shutter glasses
+    _dtrack.stations[2] = avango.daemon.Station('tracking-art-glasses-2') # small powerwall polarization glasses
+
+    _dtrack.stations[11] = avango.daemon.Station('tracking-art-pointer-1') # ednet pointer
+    _dtrack.stations[1] = avango.daemon.Station('tracking-art-pointer-2') # AUGUST pointer
+    _dtrack.stations[18] = avango.daemon.Station('tracking-art-pointer-3') # gyromouse
+
+    #_dtrack.stations[4] = avango.daemon.Station('tracking-art-prop-1') # LHT1 prop
+    #_dtrack.stations[12] = avango.daemon.Station('tracking-art-prop-2') # black-cube prop    
+
+
+    device_list.append(_dtrack)
+    print("ART Tracking started")
+
+
+def init_pst_tracking():
+
+    # create instance of DTrack
+    _pst = avango.daemon.DTrack()
+    _pst.port = "5020" # PST port
+
+    _pst.stations[1] = avango.daemon.Station('tracking-pst-glasses-1')
+    _pst.stations[2] = avango.daemon.Station('tracking-pst-pointer-1') # August pointer
+
+    #_pst.stations[3] = avango.daemon.Station('tracking-pst-prop-1') # LHT1 prop
+
+    device_list.append(_pst)
+
+    print("PST Tracking started!")
+
+
 def init_spacemouse():
 
-    _string = get_event_string(1, "3Dconnexion SpaceNavigator") # search for old spacemouse
+    # search for new spacemouse (blue LED)
+    _string = get_event_string(1, "3Dconnexion SpaceNavigator")
 
-    if len(_string) > 0: # old spacemouse was found
-        _string = _string.split()[0]
-    
-        _spacemouse = avango.daemon.HIDInput()
-        _spacemouse.station = avango.daemon.Station('gua-device-spacemouse') # create a station to propagate the input events
-        _spacemouse.device = _string
-
-        # map incoming spacemouse events to station values
-        _spacemouse.values[0] = "EV_ABS::ABS_X"   # trans X
-        _spacemouse.values[1] = "EV_ABS::ABS_Z"   # trans Y
-        _spacemouse.values[2] = "EV_ABS::ABS_Y"   # trans Z
-        _spacemouse.values[3] = "EV_ABS::ABS_RX"  # rotate X
-        _spacemouse.values[4] = "EV_ABS::ABS_RZ"  # rotate Y
-        _spacemouse.values[5] = "EV_ABS::ABS_RY"  # rotate Z
-
-        # buttons
-        _spacemouse.buttons[0] = "EV_KEY::BTN_0" # left button
-        _spacemouse.buttons[1] = "EV_KEY::BTN_1" # right button
-
-        device_list.append(_spacemouse)
-        print("Old SpaceMouse started at:", _string)
-
-        return
-
-
-    _string = get_event_string(1, "3Dconnexion SpaceNavigator for Notebooks") # search for new spacemouse
+    if len(_string) == 0:
+        _string = get_event_string(1, "3Dconnexion SpaceNavigator for Notebooks")
 
     if len(_string) > 0: # new spacemouse was found
         _string = _string.split()[0]
@@ -42,7 +58,7 @@ def init_spacemouse():
         _spacemouse.station = avango.daemon.Station('gua-device-spacemouse') # create a station to propagate the input events
         _spacemouse.device = _string
         _spacemouse.timeout = '14' # better !
-        _spacemouse.norm_abs = 'True'
+        #_spacemouse.norm_abs = 'True'
 
         # map incoming spacemouse events to station values
         _spacemouse.values[0] = "EV_REL::REL_X"   # trans X
@@ -93,13 +109,126 @@ def init_keyboard():
         keyboard.buttons[13] = "EV_KEY::KEY_KPMINUS"
         keyboard.buttons[14] = "EV_KEY::KEY_SPACE"
         keyboard.buttons[15] = "EV_KEY::KEY_LEFTCTRL"
-        
-        keyboard.buttons[16] = "EV_KEY::KEY_U"
-        keyboard.buttons[17] = "EV_KEY::KEY_I"
+        keyboard.buttons[16] = "EV_KEY::KEY_1"
+        keyboard.buttons[17] = "EV_KEY::KEY_2"
+        keyboard.buttons[18] = "EV_KEY::KEY_3"                        
                
 
         device_list.append(keyboard)
         print("Keyboard " + str(i) + " started at:", name)
+
+
+
+## Initalizes a mouse.
+def init_mouse():
+
+    ## search keyboard xy
+    _string = get_event_string(1, "Logitech USB-PS/2 Optical Mouse")
+
+    if len(_string) == 0:
+        _string = get_event_string(1, "Logitech USB Optical Mouse")
+
+    if len(_string) == 0:
+        _string = get_event_string(1, "Dell Dell USB Optical Mouse")
+        
+    if len(_string) > 0: # some mouse found
+        _string = _string.split()[0]
+
+        # create a station to propagate the input events
+        _mouse = avango.daemon.HIDInput()
+        _mouse.station = avango.daemon.Station("gua-device-mouse")
+        _mouse.device = _string
+        #_mouse.timeout = '30'
+        _mouse.timeout = '10'
+
+        _mouse.values[0] = "EV_REL::REL_X"
+        _mouse.values[1] = "EV_REL::REL_Y"
+
+        _mouse.buttons[0] = "EV_KEY::BTN_LEFT"
+        _mouse.buttons[1] = "EV_KEY::BTN_RIGHT"
+        _mouse.buttons[2] = "EV_KEY::BTN_MIDDLE"
+
+        device_list.append(_mouse)
+
+        #os.system("xinput --set-prop keyboard:'Logitech USB-PS/2 Optical Mouse' 'Device Enabled' 0") # disable X-forwarding of events
+
+        print("Mouse started at:", _string)
+
+    else:
+        print("Mouse NOT found!")
+
+
+def init_pointer1(): # orange pointer
+    _string = get_event_string(1, "MOSART Semi. Input Device")
+    _string = _string.split()
+
+    if len(_string) > 0:
+        _string = _string[0]
+        
+        _pointer = avango.daemon.HIDInput()
+        _pointer.station = avango.daemon.Station("device-pointer-1") # create a station to propagate the input events
+        _pointer.device = _string
+
+        _pointer.buttons[0] = "EV_KEY::KEY_PAGEUP"
+        _pointer.buttons[1] = "EV_KEY::KEY_B"
+
+        device_list.append(_pointer)
+
+        print("Pointer1 started at:", _string)
+
+        return
+
+
+    print("Pointer1 NOT found!")
+
+
+def init_pointer2(): # August pointer
+    _string = get_event_string(1, "MOUSE USB MOUSE")
+    _string = _string.split()
+
+    if len(_string) > 0:
+        _string = _string[0]
+        
+        _pointer = avango.daemon.HIDInput()
+        _pointer.station = avango.daemon.Station("device-pointer-2") # create a station to propagate the input events
+        _pointer.device = _string
+
+        _pointer.buttons[0] = "EV_KEY::KEY_PAGEDOWN"
+        _pointer.buttons[1] = "EV_KEY::KEY_PAGEUP"
+
+        device_list.append(_pointer)
+
+        print("Pointer2 started at:", _string)
+
+        return
+
+
+    print("Pointer2 NOT found!")
+    
+
+
+def init_pointer3(): # Gyromouse
+    _string = get_event_string(2, "Gyration Gyration RF Technology Receiver")
+    _string = _string.split()
+
+    if len(_string) > 0:
+        _string = _string[0]
+        
+        _pointer = avango.daemon.HIDInput()
+        _pointer.station = avango.daemon.Station("device-pointer-3") # create a station to propagate the input events
+        _pointer.device = _string
+
+        _pointer.buttons[0] = "EV_KEY::KEY_F14"
+
+        device_list.append(_pointer)
+
+        print("Pointer3 started at:", _string)
+
+        return
+
+
+    print("Pointer3 NOT found!")
+
 
 
 ## Gets the event string of a given input device.
@@ -134,7 +263,15 @@ def get_event_string(STRING_NUM, DEVICE_NAME):
 
 device_list = []
 
-#init_spacemouse()
+init_art_tracking()
+init_pst_tracking()
+
+init_spacemouse()
 init_keyboard()
+init_mouse()
+
+init_pointer1()
+init_pointer2()
+init_pointer3()
 
 avango.daemon.run(device_list)

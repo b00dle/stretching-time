@@ -20,7 +20,7 @@ class Box(Enemy):
 
         # create geometry
         self.geometry = _loader.create_geometry_from_file(
-            "box_enemy_geometry_GOID_"+str(self.get_num_game_objects()),
+            "box_enemy_geometry_GOID_"+str(self.game_object_id),
             "data/objects/cube.obj",
             avango.gua.LoaderFlags.DEFAULTS
         )

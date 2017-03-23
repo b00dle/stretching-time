@@ -8,7 +8,7 @@ import avango.script
 from lib.game.enemy.Enemy import Enemy
 
 class Monkey(Enemy):
-    ''' Simple enemy using monkey head. '''
+    ''' Simple enemy using monkey head. TODO setup better bounding box '''
     def __init__(self):
         self.super(Monkey).__init__()
 
@@ -20,7 +20,7 @@ class Monkey(Enemy):
 
         # create geometry
         self.geometry = _loader.create_geometry_from_file(
-            "monkey_enemy_geometry_GOID_"+str(self.get_num_game_objects()),
+            "monkey_enemy_geometry_GOID_"+str(self.game_object_id),
             "data/objects/monkey.obj",
             avango.gua.LoaderFlags.DEFAULTS
         )

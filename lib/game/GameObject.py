@@ -14,9 +14,9 @@ class GameObject(avango.script.Script):
         self.geometry = None
         
         # stores a reference id to this instance
-        self.game_object_id = self.instance_count
+        self.game_object_id = GameObject.instance_count
 
-        self.instance_count += 1
+        GameObject.instance_count += 1
 
         # flag stating whether the object has just been spawned
         # solves bug of intersecting just spawned objects,

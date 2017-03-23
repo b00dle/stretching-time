@@ -101,9 +101,9 @@ class Spawner(avango.script.Script):
 		if enemy_type == 0:
 			enemy = Monkey()
 		elif enemy_type == 1:
-			enemy = Monkey()#Sphere()
+			enemy = Sphere()
 		elif enemy_type == 2:
-			enemy = Monkey()#Box()
+			enemy = Box()
 
 		enemy.my_constructor(PARENT_NODE = self.spawn_root, SPAWN_TRANSFORM = m)
 		enemy.movement_speed = random.uniform(0.0005, 0.0015)
@@ -112,7 +112,7 @@ class Spawner(avango.script.Script):
 		enemy.rotation_axis.y = random.uniform(0.0,1.0)
 		enemy.rotation_axis.z = random.uniform(0.0,1.0)
 		enemy.rotation_axis.normalize()
-		#enemy.setScale(random.uniform(0.5,1.5))
+		enemy.setScale(random.uniform(0.5,1.5))
 
 		self.spawns.append(enemy)
 

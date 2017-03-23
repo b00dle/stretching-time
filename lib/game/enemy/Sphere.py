@@ -20,7 +20,7 @@ class Sphere(Enemy):
 
         # create geometry
         self.geometry = _loader.create_geometry_from_file(
-            "sphere_enemy_geometry_GOID_"+str(self.get_num_game_objects()),
+            "sphere_enemy_geometry_GOID_"+str(self.game_object_id),
             "data/objects/sphere.obj",
             avango.gua.LoaderFlags.DEFAULTS
         )
