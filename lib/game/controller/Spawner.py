@@ -20,10 +20,10 @@ class Spawner(avango.script.Script):
 		self.super(Spawner).__init__()
 
 		# uniform scale factor for spawned objects
-		self.spawn_scale = 0.01
+		self.spawn_scale = 1.0
 
 		# list of all objects spawned by this instance
-		self.spawns = []
+		self.spawns_dict = {}
 
 		# parent node for all spawned objects
 		self.spawn_root = None
@@ -63,7 +63,7 @@ class Spawner(avango.script.Script):
 
 	def evaluate(self):
 		''' frame based update function. '''
-		if len(self.spawns) > 0:
+		if len(self.spawns_dict) > 0:
 			self._remove_vanished()
 		if self.auto_spawn:
 			self._auto_spawn()
@@ -71,16 +71,16 @@ class Spawner(avango.script.Script):
 	def _remove_vanished(self):
 		''' Removes objects moved out of application bounds. '''
 		kill_list = []
-		for spawn in self.spawns:
+		for spawn_id in self.spawns_dict:
+			spawn = self.spawns_dict[spawn_id]
 			z = spawn.geometry.WorldTransform.value.get_translate().z
 			if z > self.z_vanish:
-				kill_list.append(spawn)
+				kill_list.append(spawn_id)
 		if len(kill_list) > 0: 
 			self.remove_spawns(kill_list)
 			while len(kill_list) > 0:
 				s = kill_list[0]
 				kill_list.pop(0)
-				del s
 			
 	def _auto_spawn(self):
 		''' Spawns one random object inside configured spawn bounds,
@@ -106,43 +106,43 @@ class Spawner(avango.script.Script):
 			enemy = Box()
 
 		enemy.my_constructor(PARENT_NODE = self.spawn_root, SPAWN_TRANSFORM = m)
-		enemy.movement_speed = random.uniform(0.0005, 0.0015)
+		enemy.movement_speed = random.uniform(0.05, 0.15)
 		enemy.rotation_speed = random.uniform(0.5,5.0)
 		enemy.rotation_axis.x = random.uniform(0.0,1.0)
 		enemy.rotation_axis.y = random.uniform(0.0,1.0)
 		enemy.rotation_axis.z = random.uniform(0.0,1.0)
 		enemy.rotation_axis.normalize()
-		enemy.setScale(random.uniform(0.5,1.5))
+		enemy.setScale(random.uniform(self.spawn_scale*0.5,self.spawn_scale*1.5))
 
-		self.spawns.append(enemy)
+		self.spawns_dict[enemy.game_object_id] = enemy
 
 	def clear(self):
 		''' Removes all spawned objects, spawned by this instance. '''
-		spawns = [s for s in self.spawns]
-		self.remove_spawns(spawns)
+		self.remove_spawns(spawns_dict.keys())
 
-	def remove_spawn(self, SPAWN):
+	def remove_spawn(self, SPAWN_ID):
 		''' Removes an object spawned by this instance. 
 			Returns success of removal. TODO fix memory leak'''
-		if SPAWN in self.spawns:
-			self.spawns.remove(SPAWN)
-			SPAWN.geometry.Parent.value.Children.value.remove(SPAWN.geometry)
-			#self.spawn_root.Children.value.remove(SPAWN.geometry)
+		if SPAWN_ID in self.spawns_dict:
+			spawn = self.spawns_dict[SPAWN_ID]
+			spawn.geometry.Parent.value.Children.value.remove(spawn.geometry)
+			self.spawns_dict.pop(SPAWN_ID, spawn)
+			del spawn
 			return True
 		print("FAILURE: Spawn not found (id:", SPAWN.id, ")")
 		return False
 
-	def remove_spawns(self, SPAWNS):
+	def remove_spawns(self, SPAWNS_IDS):
 		''' Removes all objects listed in SPAWNS from the list of spawned objects. 
 			Returns True if all list elements where removed successfully. '''
-		if len(SPAWNS) == 0:
+		if len(SPAWNS_IDS) == 0:
 			return True
 		success = True
-		for spawn in SPAWNS:
-			if not self.remove_spawn(spawn):
+		for spawn_id in SPAWNS_IDS:
+			if not self.remove_spawn(spawn_id):
 				success = False
 		return success
 
 	def spawn_count(self):
 		''' returns total number of objects spawned by this instance. '''
-		return len(self.spawns)
+		return len(self.spawns_dict)

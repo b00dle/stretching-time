@@ -18,10 +18,11 @@ class Game(avango.script.Script):
     def __init__(self):
         self.super(Game).__init__()
 
-    def my_constructor(self, SCENE_ROOT, HEAD_NODE):
+    def my_constructor(self, SCENE_ROOT, HEAD_NODE, SCREEN_NODE):
         # store scene root
         self.scene_root = SCENE_ROOT
         self.head_node = HEAD_NODE
+        self.screen_node = SCREEN_NODE
 
         self._head_pos_buffer = []
         self._velocity_norm = 0.005 # experimentally set 
@@ -32,19 +33,20 @@ class Game(avango.script.Script):
         self.spawner = Spawner()
         self.spawner.my_constructor(
             PARENT_NODE = self.scene_root,
-            Z_VANISH = 0.4,
+            Z_VANISH = 2,
             AUTO_SPAWN = True
         )
-        self.spawner.auto_spawn_min_pos = avango.gua.Vec3(-20, -9, 0)
+        self.spawner.auto_spawn_min_pos = avango.gua.Vec3(-1.5, 1.0, -70)
         #self.spawner.auto_spawn_min_pos = avango.gua.Vec3(0, 0, 0)
-        self.spawner.auto_spawn_max_pos = avango.gua.Vec3(20, 9, 0)
+        self.spawner.auto_spawn_max_pos = avango.gua.Vec3(1.5, -1.0, -70)
         #self.spawner.auto_spawn_max_pos = avango.gua.Vec3(0, 0, 0)
-        self.spawner.max_auto_spawns = 50
+        self.spawner.max_auto_spawns = 10
+        self.spawner.spawn_scale = 0.5
 
         # init player
-        p_offset = avango.gua.make_trans_mat(0,0,0.2) * avango.gua.make_scale_mat(0.01,0.01,0.01)
+        p_offset = avango.gua.make_trans_mat(0,0,0.0) * avango.gua.make_scale_mat(0.1,0.1,0.1)
         self.player = Player()
-        self.player.my_constructor(PARENT_NODE = self.scene_root, OFFSET_MAT = p_offset)
+        self.player.my_constructor(PARENT_NODE = self.screen_node, OFFSET_MAT = p_offset)
         
         self.always_evaluate(True)
 
@@ -76,25 +78,25 @@ class Game(avango.script.Script):
 
     def _move_player(self):
         ''' Moves player by offset between this and last frame's head position. '''
-        if len(self._head_pos_buffer) < 2:
-            return
-        diff = self._head_pos_buffer[-1] - self._head_pos_buffer[-2]
-        diff.z = 0.0
-        self.player.move(diff)
+        head_m = self.head_node.WorldTransform.value
+        pos = head_m.get_translate()
+        pos.z = 0.0
+        rot = head_m.get_rotate()
+        self.player.set_transform(pos, rot)
 
     def _evaluate_collisions(self):
         ''' evaluates collisions in the game. '''
         kill_list = []
-        for spawn in self.spawner.spawns:
+        for spawn_id in self.spawner.spawns_dict:
+            spawn = self.spawner.spawns_dict[spawn_id]
             if not spawn.is_collision_trigger():
                 continue
             if self.player.intersects(spawn.get_bounding_box()):
-                kill_list.append(spawn)
+                kill_list.append(spawn_id)
 
-        for spawn in kill_list:
+        for spawn_id in kill_list:
+            spawn = self.spawner.spawns_dict[spawn_id]
             spawn.geometry.Material.value.set_uniform(
                 "Color",
                 avango.gua.Vec4(1.0,0.0,0.0,1.0)
             )
-        #if len(kill_list) > 0:
-        #    self.spawner.remove_spawns(kill_list)

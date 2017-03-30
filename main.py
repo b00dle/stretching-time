@@ -8,6 +8,7 @@ import avango.gua
 ### import application libraries
 from lib.SimpleViewingSetup import SimpleViewingSetup
 from lib.AdvancedViewingSetup import StereoViewingSetup
+from lib.PointerInput import PointerInput
 from lib.Scene import Scene
 from lib.game.Game import Game
 
@@ -22,12 +23,19 @@ def start():
     viewingSetup = init_advanced_viewing_setup(scenegraph)
     #viewingSetup = SimpleViewingSetup(SCENEGRAPH = scenegraph, STEREO_MODE = "anaglyph")
 
+    ## init input
+    pointerInput = init_input_setup(viewingSetup, scenegraph)
+
     ## init scene
     scene = Scene(PARENT_NODE = scenegraph.Root.value)
 
     ## init spawner
     game = Game()
-    game.my_constructor(SCENE_ROOT = scenegraph.Root.value, HEAD_NODE = viewingSetup.head_node)
+    game.my_constructor(
+      SCENE_ROOT = scenegraph.Root.value,
+      HEAD_NODE = viewingSetup.head_node,
+      SCREEN_NODE = viewingSetup.screen_node
+    )
 
     ## init field connections (dependency graph)
     print_graph(scenegraph.Root.value)
@@ -102,6 +110,26 @@ def init_advanced_viewing_setup(SCENEGRAPH):
     quit()
 
   return viewingSetup
+
+def init_input_setup(VIEWING_SETUP, SCENEGRAPH):
+  hostname = open('/etc/hostname', 'r').readline()
+  hostname = hostname.strip(" \n")
+
+  pointerInput = None
+  if hostname == "athena": # small powerwall workstation
+    _tracking_transmitter_offset = avango.gua.make_trans_mat(0.05,-1.43,1.6) # transformation into tracking coordinate system
+
+    pointerInput = PointerInput()
+    pointerInput.my_constructor(
+        SCENEGRAPH = SCENEGRAPH,
+        NAVIGATION_NODE = VIEWING_SETUP.navigation_node,
+        POINTER_TRACKING_STATION = "tracking-art-pointer-2",
+        TRACKING_TRANSMITTER_OFFSET = _tracking_transmitter_offset,
+        POINTER_DEVICE_STATION = "device-pointer-2",
+        HEAD_NODE = VIEWING_SETUP.head_node
+        )
+
+  return pointerInput
 
 ## print the subgraph under a given node to the console
 def print_graph(root_node):
