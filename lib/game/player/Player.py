@@ -22,21 +22,25 @@ class Player(GameObject):
         # store offset mat, so that transformation update will factor it in
         self._offset_mat = OFFSET_MAT
 
+        # create transform node positioned by sf_mat
+        self.node = avango.gua.nodes.TransformNode(Name = "pointer_node")
+        self.node.Transform.connect_from(self.sf_mat)
+        # append to parent
+        PARENT_NODE.Children.value.append(self.node)
+
         # create geometry
         self.geometry = _loader.create_geometry_from_file(
             "player_geometry_GOID_"+str(self.get_num_game_objects()),
             "data/objects/frame.obj",
             avango.gua.LoaderFlags.DEFAULTS
         )
-        self.sf_mat.value = OFFSET_MAT
-        #self.geometry.Transform.value = OFFSET_MAT
+        self.geometry.Transform.value = OFFSET_MAT
         self.geometry.Material.value.set_uniform(
             "Color",
             avango.gua.Vec4(1.0,0.0,0.0,1.0)
         )
-
         # append to parent
-        PARENT_NODE.Children.value.append(self.geometry)
+        self.node.Children.value.append(self.geometry)
 
         self.sf_mat.value = avango.gua.make_identity_mat()
 
@@ -72,17 +76,20 @@ class Player(GameObject):
             avango.gua.make_rot_mat(rot) * \
             avango.gua.make_scale_mat(SCA)
 
-    def set_transform(self, POS, ROT, SCA=None):
+    def set_transform(self, POS, ROT=None, SCA=None):
         ''' Sets transformation according to given position, rotation and scale. '''
         sca = SCA
         if sca == None:
             sca = self.sf_mat.value.get_scale()
+        rot = ROT
+        if rot == None:
+            rot = self.sf_mat.value.get_rotate()
 
         self.sf_mat.value = avango.gua.make_trans_mat(POS) * \
-            avango.gua.make_rot_mat(ROT) * \
+            avango.gua.make_rot_mat(rot) * \
             avango.gua.make_scale_mat(sca)
 
     @field_has_changed(sf_mat)
     def sf_mat_changed(self):
        ''' update transformation '''
-       self.geometry.Transform.value = self.sf_mat.value * self._offset_mat
+       pass#self.geometry.Transform.value = self.sf_mat.value * self._offset_mat

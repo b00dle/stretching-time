@@ -62,7 +62,14 @@ class PointerInput(avango.script.Script):
     def evaluate(self):
         pass#print(self.pointer_node.WorldTransform.value)
 
+    def showDebugGeometry(self, ENABLED=True):
+        ''' switches on and of debug geometry for pointer visualization. '''
+        if ENABLED:
+            self.hand_geometry.Tags.value = []
+        else:
+            self.hand_geometry.Tags.value = ["invisible"] 
+
     @field_has_changed(sf_button)
     def sf_button_changed(self):
-        print(self.sf_button.value)
+        pass#print(self.sf_button.value)
 

@@ -34,7 +34,8 @@ def start():
     game.my_constructor(
       SCENE_ROOT = scenegraph.Root.value,
       HEAD_NODE = viewingSetup.head_node,
-      SCREEN_NODE = viewingSetup.screen_node
+      SCREEN_NODE = viewingSetup.screen_node,
+      POINTER_INPUT = pointerInput
     )
 
     ## init field connections (dependency graph)
@@ -123,9 +124,9 @@ def init_input_setup(VIEWING_SETUP, SCENEGRAPH):
     pointerInput.my_constructor(
         SCENEGRAPH = SCENEGRAPH,
         NAVIGATION_NODE = VIEWING_SETUP.navigation_node,
-        POINTER_TRACKING_STATION = "tracking-art-pointer-2",
+        POINTER_TRACKING_STATION = "tracking-art-pointer-1",
         TRACKING_TRANSMITTER_OFFSET = _tracking_transmitter_offset,
-        POINTER_DEVICE_STATION = "device-pointer-2",
+        POINTER_DEVICE_STATION = "device-pointer-1",
         HEAD_NODE = VIEWING_SETUP.head_node
         )
 

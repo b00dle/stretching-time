@@ -11,13 +11,11 @@ from lib.game.enemy.Monkey import Monkey
 from lib.game.enemy.Sphere import Sphere
 from lib.game.enemy.Box import Box
 
-class Spawner(avango.script.Script):
-	''' Manages creation of enemy objects and power ups collectable.
-		Also observes position of enemy. If enemy exceeds max bounds,
-		it will be removed by the spawner. '''
+class RadialSpawner(avango.script.Script):
+	''' Manages creation of spawned objects. Vanishing by distances to spawn root evaluation. '''
 
 	def __init__(self):
-		self.super(Spawner).__init__()
+		self.super(RadialSpawner).__init__()
 
 		# uniform scale factor for spawned objects
 		self.spawn_scale = 1.0
@@ -28,53 +26,34 @@ class Spawner(avango.script.Script):
 		# parent node for all spawned objects
 		self.spawn_root = None
 
-		# vanishing position for spawned objects
+		# vanishing distance for spawned objects
 		# objects exceeding this plane will be deleted by spawner
-		self.z_vanish = 0
-
-		# flag for enabling/disableing automatic spawning
-		self.auto_spawn = False
-
-		# number of maximum spawns
-		# only used if auto spawn enabled
-		self.max_auto_spawns = 10
-
-		# bounds set for random spawning
-		# only used if auto spawn enabled
-		self.auto_spawn_min_pos = avango.gua.Vec3()
-		self.auto_spawn_max_pos = avango.gua.Vec3()
+		self.vanish_distance = 0
 
 		# enable frame based update
 		self.always_evaluate(True)
 
-	def my_constructor(self, PARENT_NODE = None, Z_VANISH = 0, AUTO_SPAWN = True):
+	def my_constructor(self, PARENT_NODE, VANISH_DISTANCE = 1):
 		# create root node for object spawning
 		self.spawn_root = avango.gua.nodes.TransformNode(Name = "spawn_root")
-		self.spawn_root.Transform.value = avango.gua.make_scale_mat(
-			self.spawn_scale,
-			self.spawn_scale,
-			self.spawn_scale
-		)
 		PARENT_NODE.Children.value.append(self.spawn_root)
 
 		# set members from parameters
-		self.z_vanish = Z_VANISH
-		self.auto_spawn = AUTO_SPAWN
-
+		self.vanish_distance = VANISH_DISTANCE
+		
 	def evaluate(self):
 		''' frame based update function. '''
 		if len(self.spawns_dict) > 0:
 			self._remove_vanished()
-		if self.auto_spawn:
-			self._auto_spawn()
-
+		
 	def _remove_vanished(self):
 		''' Removes objects moved out of application bounds. '''
+		root_pos = self.spawn_root.WorldTransform.value.get_translate()
 		kill_list = []
 		for spawn_id in self.spawns_dict:
 			spawn = self.spawns_dict[spawn_id]
-			z = spawn.geometry.WorldTransform.value.get_translate().z
-			if z > self.z_vanish:
+			spawn_pos = spawn.geometry.WorldTransform.value.get_translate()
+			if (spawn_pos - root_pos).length() > self.vanish_distance:
 				kill_list.append(spawn_id)
 		if len(kill_list) > 0: 
 			self.remove_spawns(kill_list)
@@ -82,39 +61,30 @@ class Spawner(avango.script.Script):
 				s = kill_list[0]
 				kill_list.pop(0)
 			
-	def _auto_spawn(self):
-		''' Spawns one random object inside configured spawn bounds,
-			if number of total spawned objects < self.max_auto_spawns. '''
-		if self.spawn_count() < self.max_auto_spawns:
-			self.spawn_random(self.auto_spawn_min_pos, self.auto_spawn_max_pos)  
+	def spawn(self, SPAWN_POS, MOVEMENT_SPEED, MOVEMENT_DIR, SPAWN_TYPE=2):
+		''' Spawns random spawn at random location. '''
+		spawn = None
+		if SPAWN_TYPE == 0:
+			spawn = Monkey()
+		elif SPAWN_TYPE == 1:
+			spawn = Sphere()
+		elif SPAWN_TYPE == 2:
+			spawn = Box()
 
-	def spawn_random(self, SPAWN_MIN = avango.gua.Vec3(), SPAWN_MAX = avango.gua.Vec3()):
-		''' Spawns random enemy at random location. '''
-		x = random.uniform(SPAWN_MIN.x, SPAWN_MAX.x)
-		y = random.uniform(SPAWN_MIN.y, SPAWN_MAX.y)
-		z = random.uniform(SPAWN_MIN.z, SPAWN_MAX.z)
+		spawn.my_constructor(
+			PARENT_NODE = self.spawn_root,
+			SPAWN_TRANSFORM = avango.gua.make_trans_mat(SPAWN_POS)
+		)
+		spawn.movement_speed = MOVEMENT_SPEED
+		spawn.movement_dir = MOVEMENT_DIR
+		spawn.rotation_speed = random.uniform(0.5,5.0)
+		spawn.rotation_axis.x = random.uniform(0.0,1.0)
+		spawn.rotation_axis.y = random.uniform(0.0,1.0)
+		spawn.rotation_axis.z = random.uniform(0.0,1.0)
+		spawn.rotation_axis.normalize()
+		spawn.setScale(self.spawn_scale)
 
-		m = avango.gua.make_trans_mat(x, y, z)
-
-		enemy = None
-		enemy_type = random.randint(0,2)
-		if enemy_type == 0:
-			enemy = Box()#Monkey()
-		elif enemy_type == 1:
-			enemy = Box()#Sphere()
-		elif enemy_type == 2:
-			enemy = Box()
-
-		enemy.my_constructor(PARENT_NODE = self.spawn_root, SPAWN_TRANSFORM = m)
-		enemy.movement_speed = random.uniform(0.05, 0.15)
-		enemy.rotation_speed = random.uniform(0.5,5.0)
-		enemy.rotation_axis.x = random.uniform(0.0,1.0)
-		enemy.rotation_axis.y = random.uniform(0.0,1.0)
-		enemy.rotation_axis.z = random.uniform(0.0,1.0)
-		enemy.rotation_axis.normalize()
-		enemy.setScale(random.uniform(self.spawn_scale*0.5,self.spawn_scale*1.5))
-
-		self.spawns_dict[enemy.game_object_id] = enemy
+		self.spawns_dict[spawn.game_object_id] = spawn
 
 	def clear(self):
 		''' Removes all spawned objects, spawned by this instance. '''

@@ -7,7 +7,10 @@ import avango.script
 from avango.script import field_has_changed
 
 from lib.game.controller.Spawner import Spawner
+from lib.game.controller.DestructionSpawner import DestructionSpawner
 from lib.game.player.Player import Player
+from lib.game.tool.SwordDyrion import SwordDyrion
+from lib.game.tool.PewPewGun import PewPewGun
 import lib.game.Globals
 
 import random
@@ -18,16 +21,22 @@ class Game(avango.script.Script):
     def __init__(self):
         self.super(Game).__init__()
 
-    def my_constructor(self, SCENE_ROOT, HEAD_NODE, SCREEN_NODE):
+    def my_constructor(self, SCENE_ROOT, HEAD_NODE, SCREEN_NODE, POINTER_INPUT):
         # store scene root
         self.scene_root = SCENE_ROOT
         self.head_node = HEAD_NODE
         self.screen_node = SCREEN_NODE
+        self.pointer_input = POINTER_INPUT
+        self.pointer_input.showDebugGeometry(False)
 
         self._head_pos_buffer = []
         self._velocity_norm = 0.005 # experimentally set 
 
         self._test()
+
+        # init destruction spawner
+        self.destruction_spawner = DestructionSpawner()
+        self.destruction_spawner.my_constructor(PARENT_NODE = self.scene_root)
 
         # init spawner
         self.spawner = Spawner()
@@ -37,20 +46,32 @@ class Game(avango.script.Script):
             AUTO_SPAWN = True
         )
         self.spawner.auto_spawn_min_pos = avango.gua.Vec3(-1.5, 1.0, -70)
-        #self.spawner.auto_spawn_min_pos = avango.gua.Vec3(0, 0, 0)
         self.spawner.auto_spawn_max_pos = avango.gua.Vec3(1.5, -1.0, -70)
-        #self.spawner.auto_spawn_max_pos = avango.gua.Vec3(0, 0, 0)
         self.spawner.max_auto_spawns = 10
-        self.spawner.spawn_scale = 0.5
+        self.spawner.spawn_scale = 0.3
 
         # init player
         p_offset = avango.gua.make_trans_mat(0,0,0.0) * avango.gua.make_scale_mat(0.1,0.1,0.1)
         self.player = Player()
         self.player.my_constructor(PARENT_NODE = self.screen_node, OFFSET_MAT = p_offset)
         
+        #self.dyrion = None
+        self.dyrion = SwordDyrion()
+        self.dyrion.my_constructor(PARENT_NODE = self.player.node, GEOMETRY_SIZE = 0.3)
+        self.dyrion.sf_sword_mat.connect_from(self.pointer_input.pointer_node.Transform)
+        
+        self.pewpew = PewPewGun()
+        self.pewpew.my_constructor(
+            PARENT_NODE = self.player.node,
+            SPAWN_PARENT = self.scene_root,
+            GEOMETRY_SIZE = 0.3
+        )
+        self.pewpew.sf_gun_mat.connect_from(self.pointer_input.pointer_node.Transform)
+        self.pewpew.sf_gun_trigger.connect_from(self.pointer_input.sf_button)
+
         self.always_evaluate(True)
 
-        self._debug_stretch_factor = 5.0
+        self._debug_stretch_factor = 2.0
 
     def _test(self):
         ''' debug function for testing purposes. '''
@@ -81,22 +102,54 @@ class Game(avango.script.Script):
         head_m = self.head_node.WorldTransform.value
         pos = head_m.get_translate()
         pos.z = 0.0
-        rot = head_m.get_rotate()
-        self.player.set_transform(pos, rot)
+        self.player.set_transform(pos)
 
     def _evaluate_collisions(self):
         ''' evaluates collisions in the game. '''
-        kill_list = []
+        player_collide_list = []
+        tool_collide_list = []
         for spawn_id in self.spawner.spawns_dict:
             spawn = self.spawner.spawns_dict[spawn_id]
             if not spawn.is_collision_trigger():
                 continue
             if self.player.intersects(spawn.get_bounding_box()):
-                kill_list.append(spawn_id)
+                player_collide_list.append(spawn_id)
+            
+            if self.dyrion != None and self.dyrion.intersects(spawn.get_bounding_box()):
+                tool_collide_list.append(spawn_id)
 
-        for spawn_id in kill_list:
+            if self.pewpew != None:
+                bullet_kill_list = []
+                projectile_spawner = self.pewpew.projectile_spawner
+                for bullet_id in projectile_spawner.spawns_dict:
+                    bullet = projectile_spawner.spawns_dict[bullet_id]
+                    if not bullet.is_collision_trigger():
+                        continue
+                    for spawn_id in self.spawner.spawns_dict:
+                        spawn = self.spawner.spawns_dict[spawn_id]
+                        if spawn.is_collision_trigger() and bullet.intersects(spawn.get_bounding_box()):
+                            tool_collide_list.append(spawn_id)
+                            bullet_kill_list.append(bullet_id)
+                if len(bullet_kill_list) > 0:
+                    projectile_spawner.remove_spawns(bullet_kill_list)
+
+        player_collide_list = [spawn_id for spawn_id in player_collide_list if spawn_id not in tool_collide_list]
+        for spawn_id in player_collide_list:
             spawn = self.spawner.spawns_dict[spawn_id]
             spawn.geometry.Material.value.set_uniform(
                 "Color",
                 avango.gua.Vec4(1.0,0.0,0.0,1.0)
             )
+
+        for spawn_id in tool_collide_list:
+            spawn = self.spawner.spawns_dict[spawn_id]
+            s_pos = spawn.geometry.WorldTransform.value.get_translate()
+            self.destruction_spawner.spawn_destruction(
+                SPAWN_POS = s_pos,
+                SPAWN_SCALE = 0.05,
+                SPAWN_AMOUNT = random.randint(10,20),
+                VANISH_DISTANCE = 4.0
+            )
+
+        self.spawner.remove_spawns(tool_collide_list)
+        

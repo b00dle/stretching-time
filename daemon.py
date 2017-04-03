@@ -15,7 +15,7 @@ def init_art_tracking():
     _dtrack.stations[10] = avango.daemon.Station('tracking-art-glasses-1') # 3D-TV wired shutter glasses
     _dtrack.stations[2] = avango.daemon.Station('tracking-art-glasses-2') # small powerwall polarization glasses
 
-    _dtrack.stations[11] = avango.daemon.Station('tracking-art-pointer-1') # ednet pointer
+    _dtrack.stations[11] = avango.daemon.Station('tracking-art-pointer-1') # mozard pointer
     _dtrack.stations[13] = avango.daemon.Station('tracking-art-pointer-2') # yellow green
     _dtrack.stations[18] = avango.daemon.Station('tracking-art-pointer-3') # gyromouse
 
