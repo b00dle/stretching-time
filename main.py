@@ -32,7 +32,7 @@ def start():
     ## init spawner
     game = Game()
     game.my_constructor(
-      SCENE_ROOT = scenegraph.Root.value,
+      SCENEGRAPH = scenegraph,
       HEAD_NODE = viewingSetup.head_node,
       SCREEN_NODE = viewingSetup.screen_node,
       POINTER_INPUT = pointerInput

@@ -25,6 +25,18 @@ class PewPewGun(GameObject):
     def evaluate(self):
         pass
 
+    def cleanup(self):
+        ''' BC override. '''
+        if self._barrel_exit_node != None:
+            self._barrel_exit_node.Parent.value.Children.value.remove(self._barrel_exit_node)
+
+        self.projectile_spawner.cleanup()
+
+        sf_gun_mat.disconnect()
+        sf_gun_trigger.disconnect()
+
+        self.super(SwordDyrion).cleanup()
+
     def my_constructor(self,
                        PARENT_NODE,
                        SPAWN_PARENT,
@@ -36,7 +48,7 @@ class PewPewGun(GameObject):
 
         # create geometry
         self.geometry = _loader.create_geometry_from_file(
-            "sword_dyrion_geometry_GOID_"+str(self.game_object_id),
+            "pewpew_geometry_GOID_"+str(self.game_object_id),
             "data/objects/plunger_op.obj",
             avango.gua.LoaderFlags.DEFAULTS
         )

@@ -19,11 +19,16 @@ class Box(Enemy):
         _loader = avango.gua.nodes.TriMeshLoader()
 
         # create geometry
+        loader_flags = avango.gua.LoaderFlags.DEFAULTS
+        if self.pickable:
+            loader_flags = loader_flags | avango.gua.LoaderFlags.MAKE_PICKABLE
+
         self.geometry = _loader.create_geometry_from_file(
             "box_enemy_geometry_GOID_"+str(self.game_object_id),
             "data/objects/cube.obj",
-            avango.gua.LoaderFlags.DEFAULTS
+            loader_flags 
         )
+            
         self.geometry.Transform.value = SPAWN_TRANSFORM
 
         # append to parent

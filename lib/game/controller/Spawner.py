@@ -35,6 +35,9 @@ class Spawner(avango.script.Script):
 		# flag for enabling/disableing automatic spawning
 		self.auto_spawn = False
 
+		# flag for enabling/disabling spawning of pickable objects
+		self.spawn_pickable = False
+
 		# number of maximum spawns
 		# only used if auto spawn enabled
 		self.max_auto_spawns = 10
@@ -68,6 +71,13 @@ class Spawner(avango.script.Script):
 		if self.auto_spawn:
 			self._auto_spawn()
 
+	def cleanup(self):
+		''' cleans up pending connections into the application, so that object can be deleted. '''
+		self.clear()
+		if self.spawn_root != None:
+			self.spawn_root.Parent.value.Children.value.remove(self.spawn_root)
+		self.always_evaluate(False) 
+
 	def _remove_vanished(self):
 		''' Removes objects moved out of application bounds. '''
 		kill_list = []
@@ -76,19 +86,17 @@ class Spawner(avango.script.Script):
 			z = spawn.geometry.WorldTransform.value.get_translate().z
 			if z > self.z_vanish:
 				kill_list.append(spawn_id)
+
 		if len(kill_list) > 0: 
 			self.remove_spawns(kill_list)
-			while len(kill_list) > 0:
-				s = kill_list[0]
-				kill_list.pop(0)
 			
 	def _auto_spawn(self):
 		''' Spawns one random object inside configured spawn bounds,
 			if number of total spawned objects < self.max_auto_spawns. '''
 		if self.spawn_count() < self.max_auto_spawns:
-			self.spawn_random(self.auto_spawn_min_pos, self.auto_spawn_max_pos)  
+			self.spawn(self.auto_spawn_min_pos, self.auto_spawn_max_pos)  
 
-	def spawn_random(self, SPAWN_MIN = avango.gua.Vec3(), SPAWN_MAX = avango.gua.Vec3()):
+	def spawn(self, SPAWN_MIN = avango.gua.Vec3(), SPAWN_MAX = avango.gua.Vec3(), SPAWN_TYPE = 2):
 		''' Spawns random enemy at random location. '''
 		x = random.uniform(SPAWN_MIN.x, SPAWN_MAX.x)
 		y = random.uniform(SPAWN_MIN.y, SPAWN_MAX.y)
@@ -97,14 +105,14 @@ class Spawner(avango.script.Script):
 		m = avango.gua.make_trans_mat(x, y, z)
 
 		enemy = None
-		enemy_type = random.randint(0,2)
-		if enemy_type == 0:
-			enemy = Box()#Monkey()
-		elif enemy_type == 1:
-			enemy = Box()#Sphere()
-		elif enemy_type == 2:
+		if SPAWN_TYPE == 0:
+			enemy = Monkey()
+		elif SPAWN_TYPE == 1:
+			enemy = Sphere()
+		else:
 			enemy = Box()
 
+		enemy.pickable = self.spawn_pickable
 		enemy.my_constructor(PARENT_NODE = self.spawn_root, SPAWN_TRANSFORM = m)
 		enemy.movement_speed = random.uniform(0.05, 0.15)
 		enemy.rotation_speed = random.uniform(0.5,5.0)
@@ -125,7 +133,7 @@ class Spawner(avango.script.Script):
 			Returns success of removal. TODO fix memory leak'''
 		if SPAWN_ID in self.spawns_dict:
 			spawn = self.spawns_dict[SPAWN_ID]
-			spawn.geometry.Parent.value.Children.value.remove(spawn.geometry)
+			spawn.cleanup()
 			self.spawns_dict.pop(SPAWN_ID, spawn)
 			del spawn
 			return True

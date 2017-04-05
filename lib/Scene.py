@@ -36,6 +36,25 @@ class Scene:
         _loader = avango.gua.nodes.TriMeshLoader() # get trimesh loader to load external meshes
 
         '''
+        self.glumb_mouth = _loader.create_geometry_from_file(
+            "glumb_mouth_geometry",
+            "data/objects/glumb/basti.fbx",
+            avango.gua.LoaderFlags.DEFAULTS
+        )
+
+        #self.glumb_mouth.Children.value[1].Material.value.set_uniform(
+        #    "ColorMap", "data/objects/glumb/Thing_Eyes.png"
+        #)
+
+        
+        self.glumb_mouth.Transform.value = avango.gua.make_trans_mat(0,0,-70) * \
+            avango.gua.make_rot_mat(0,0,1,0) * \
+            avango.gua.make_scale_mat(5,5,5)
+        '''
+        
+        PARENT_NODE.Children.value.append(self.glumb_mouth)
+        
+        '''
         ## init ground
         self.ground_geometry = _loader.create_geometry_from_file("ground_geometry", "data/objects/cube.obj", avango.gua.LoaderFlags.DEFAULTS)
         self.ground_geometry.Transform.value = \

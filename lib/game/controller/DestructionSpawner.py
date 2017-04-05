@@ -22,6 +22,11 @@ class DestructionSpawner(avango.script.Script):
 	def my_constructor(self, PARENT_NODE):
 		self.parent_node = PARENT_NODE
 
+	def cleanup():
+		''' cleans up pending connections into the application, so that object can be deleted. '''
+		self.clear()
+		self.always_evaluate(False)
+
 	def evaluate(self):
 		if len(self._spawners) > 0:
 			self._remove_unused()
@@ -34,10 +39,10 @@ class DestructionSpawner(avango.script.Script):
 				kill_list.append(spawner)
 
 		while len(kill_list) > 0:
-			spawner = kill_list[-1]
+			spawner = kill_list[0]
 			kill_list.pop(0)
 			self._spawners.remove(spawner)
-			self.parent_node.Children.value.remove(spawner.spawn_root)
+			spawner.cleanup()
 			del spawner
 
 	def spawn_destruction(self, SPAWN_POS, SPAWN_SCALE, SPAWN_AMOUNT, VANISH_DISTANCE):
@@ -61,4 +66,13 @@ class DestructionSpawner(avango.script.Script):
 			spawner.spawn(avango.gua.Vec3(0,0,0), speed, direction)
 
 		self._spawners.append(spawner)
+
+	def clear(self):
+		''' deletes all spawned destruction animations created by this instance. '''
+		while len(self._spawners) > 0:
+			spawner = kill_list[-1]
+			kill_list.pop(0)
+			self._spawners.remove(spawner)
+			spawner.cleanup()
+			del spawner
 

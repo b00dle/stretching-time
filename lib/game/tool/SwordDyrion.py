@@ -23,6 +23,15 @@ class SwordDyrion(GameObject):
     def evaluate(self):
         pass
 
+    def cleanup(self):
+        ''' BC override. '''
+        if self.hit_box != None:
+            self.hit_box.Parent.value.Children.value.remove(self.hit_box)
+
+        sf_sword_mat.disconnect()
+
+        self.super(SwordDyrion).cleanup()
+
     def my_constructor(self,
                        PARENT_NODE = None,
                        GEOMETRY_SIZE = 1.0):

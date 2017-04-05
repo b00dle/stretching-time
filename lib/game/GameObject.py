@@ -33,6 +33,12 @@ class GameObject(avango.script.Script):
         if self._just_spawned:
             self._just_spawned = False
 
+    def cleanup(self):
+        ''' cleans up pending connections into the application, so that object can be deleted. '''
+        self.always_evaluate(False)
+        if self.geometry != None:
+            self.geometry.Parent.value.Children.value.remove(self.geometry)
+
     def get_just_spawned(self):
         ''' getter for self._just_spawned. '''
         return self._just_spawned 

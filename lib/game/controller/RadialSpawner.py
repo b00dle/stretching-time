@@ -40,7 +40,14 @@ class RadialSpawner(avango.script.Script):
 
 		# set members from parameters
 		self.vanish_distance = VANISH_DISTANCE
-		
+	
+	def cleanup(self):
+		''' cleans up pending connections into the application, so that object can be deleted. '''
+		self.clear()
+		if self.spawn_root != None:
+			self.spawn_root.Parent.value.Children.value.remove(self.spawn_root)
+		self.always_evaluate(False)
+
 	def evaluate(self):
 		''' frame based update function. '''
 		if len(self.spawns_dict) > 0:
@@ -61,20 +68,21 @@ class RadialSpawner(avango.script.Script):
 				s = kill_list[0]
 				kill_list.pop(0)
 			
-	def spawn(self, SPAWN_POS, MOVEMENT_SPEED, MOVEMENT_DIR, SPAWN_TYPE=2):
+	def spawn(self, SPAWN_POS, MOVEMENT_SPEED, MOVEMENT_DIR, SPAWN_TYPE=2, SPAWN_OBJ=None):
 		''' Spawns random spawn at random location. '''
-		spawn = None
-		if SPAWN_TYPE == 0:
-			spawn = Monkey()
-		elif SPAWN_TYPE == 1:
-			spawn = Sphere()
-		elif SPAWN_TYPE == 2:
-			spawn = Box()
+		spawn = SPAWN_OBJ
+		if spawn == None:
+			if SPAWN_TYPE == 0:
+				spawn = Monkey()
+			elif SPAWN_TYPE == 1:
+				spawn = Sphere()
+			else:
+				spawn = Box()
+			spawn.my_constructor(
+				PARENT_NODE = self.spawn_root,
+				SPAWN_TRANSFORM = avango.gua.make_trans_mat(SPAWN_POS)
+			)
 
-		spawn.my_constructor(
-			PARENT_NODE = self.spawn_root,
-			SPAWN_TRANSFORM = avango.gua.make_trans_mat(SPAWN_POS)
-		)
 		spawn.movement_speed = MOVEMENT_SPEED
 		spawn.movement_dir = MOVEMENT_DIR
 		spawn.rotation_speed = random.uniform(0.5,5.0)
@@ -88,15 +96,15 @@ class RadialSpawner(avango.script.Script):
 
 	def clear(self):
 		''' Removes all spawned objects, spawned by this instance. '''
-		self.remove_spawns(spawns_dict.keys())
+		self.remove_spawns(self.spawns_dict.keys())
 
 	def remove_spawn(self, SPAWN_ID):
 		''' Removes an object spawned by this instance. 
 			Returns success of removal. TODO fix memory leak'''
 		if SPAWN_ID in self.spawns_dict:
 			spawn = self.spawns_dict[SPAWN_ID]
-			spawn.geometry.Parent.value.Children.value.remove(spawn.geometry)
 			self.spawns_dict.pop(SPAWN_ID, spawn)
+			spawn.cleanup()
 			del spawn
 			return True
 		print("FAILURE: Spawn not found (id:", SPAWN_ID, ")")

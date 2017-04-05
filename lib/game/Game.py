@@ -11,6 +11,7 @@ from lib.game.controller.DestructionSpawner import DestructionSpawner
 from lib.game.player.Player import Player
 from lib.game.tool.SwordDyrion import SwordDyrion
 from lib.game.tool.PewPewGun import PewPewGun
+from lib.game.tool.HomingGun import HomingGun
 import lib.game.Globals
 
 import random
@@ -21,9 +22,9 @@ class Game(avango.script.Script):
     def __init__(self):
         self.super(Game).__init__()
 
-    def my_constructor(self, SCENE_ROOT, HEAD_NODE, SCREEN_NODE, POINTER_INPUT):
+    def my_constructor(self, SCENEGRAPH, HEAD_NODE, SCREEN_NODE, POINTER_INPUT):
         # store scene root
-        self.scene_root = SCENE_ROOT
+        self.scenegraph = SCENEGRAPH
         self.head_node = HEAD_NODE
         self.screen_node = SCREEN_NODE
         self.pointer_input = POINTER_INPUT
@@ -36,12 +37,12 @@ class Game(avango.script.Script):
 
         # init destruction spawner
         self.destruction_spawner = DestructionSpawner()
-        self.destruction_spawner.my_constructor(PARENT_NODE = self.scene_root)
+        self.destruction_spawner.my_constructor(PARENT_NODE = self.scenegraph.Root.value)
 
         # init spawner
         self.spawner = Spawner()
         self.spawner.my_constructor(
-            PARENT_NODE = self.scene_root,
+            PARENT_NODE = self.scenegraph.Root.value,
             Z_VANISH = 2,
             AUTO_SPAWN = True
         )
@@ -49,25 +50,42 @@ class Game(avango.script.Script):
         self.spawner.auto_spawn_max_pos = avango.gua.Vec3(1.5, -1.0, -70)
         self.spawner.max_auto_spawns = 10
         self.spawner.spawn_scale = 0.3
+        self.spawner.spawn_pickable = True
 
         # init player
         p_offset = avango.gua.make_trans_mat(0,0,0.0) * avango.gua.make_scale_mat(0.1,0.1,0.1)
         self.player = Player()
         self.player.my_constructor(PARENT_NODE = self.screen_node, OFFSET_MAT = p_offset)
         
-        #self.dyrion = None
+        # init sword tool
         self.dyrion = SwordDyrion()
-        self.dyrion.my_constructor(PARENT_NODE = self.player.node, GEOMETRY_SIZE = 0.3)
+        self.dyrion.my_constructor(PARENT_NODE = self.player.node, GEOMETRY_SIZE = 0.5)
         self.dyrion.sf_sword_mat.connect_from(self.pointer_input.pointer_node.Transform)
         
+        # init gun tool
+        '''
         self.pewpew = PewPewGun()
         self.pewpew.my_constructor(
             PARENT_NODE = self.player.node,
-            SPAWN_PARENT = self.scene_root,
+            SPAWN_PARENT = self.scenegraph.Root.value,
             GEOMETRY_SIZE = 0.3
         )
         self.pewpew.sf_gun_mat.connect_from(self.pointer_input.pointer_node.Transform)
         self.pewpew.sf_gun_trigger.connect_from(self.pointer_input.sf_button)
+        '''
+
+        # init homing gun tool
+        self.homing = HomingGun()
+        self.homing.my_constructor(
+            PARENT_NODE = self.player.node,
+            SPAWN_PARENT = self.scenegraph.Root.value,
+            TARGET_SPAWNER = self.spawner,
+            GEOMETRY_SIZE = 0.3
+        )
+        self.homing.sf_gun_mat.connect_from(self.pointer_input.pointer_node.Transform)
+        self.homing.sf_gun_trigger.connect_from(self.pointer_input.sf_button)
+        self.homing.pick_length = 50.0
+        self.homing.pick_angle_tolerance = 15.0
 
         self.always_evaluate(True)
 
@@ -118,9 +136,9 @@ class Game(avango.script.Script):
             if self.dyrion != None and self.dyrion.intersects(spawn.get_bounding_box()):
                 tool_collide_list.append(spawn_id)
 
-            if self.pewpew != None:
+            if self.homing != None:
                 bullet_kill_list = []
-                projectile_spawner = self.pewpew.projectile_spawner
+                projectile_spawner = self.homing.projectile_spawner
                 for bullet_id in projectile_spawner.spawns_dict:
                     bullet = projectile_spawner.spawns_dict[bullet_id]
                     if not bullet.is_collision_trigger():
