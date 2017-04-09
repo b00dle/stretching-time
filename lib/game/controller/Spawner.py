@@ -10,6 +10,7 @@ import random
 from lib.game.enemy.Monkey import Monkey
 from lib.game.enemy.Sphere import Sphere
 from lib.game.enemy.Box import Box
+from lib.game.enemy.Cupcake import Cupcake
 
 class Spawner(avango.script.Script):
 	''' Manages creation of enemy objects and power ups collectable.
@@ -96,7 +97,7 @@ class Spawner(avango.script.Script):
 		if self.spawn_count() < self.max_auto_spawns:
 			self.spawn(self.auto_spawn_min_pos, self.auto_spawn_max_pos)  
 
-	def spawn(self, SPAWN_MIN = avango.gua.Vec3(), SPAWN_MAX = avango.gua.Vec3(), SPAWN_TYPE = 2):
+	def spawn(self, SPAWN_MIN = avango.gua.Vec3(), SPAWN_MAX = avango.gua.Vec3(), SPAWN_TYPE = 3):
 		''' Spawns random enemy at random location. '''
 		x = random.uniform(SPAWN_MIN.x, SPAWN_MAX.x)
 		y = random.uniform(SPAWN_MIN.y, SPAWN_MAX.y)
@@ -109,8 +110,10 @@ class Spawner(avango.script.Script):
 			enemy = Monkey()
 		elif SPAWN_TYPE == 1:
 			enemy = Sphere()
-		else:
+		elif SPAWN_TYPE == 2:
 			enemy = Box()
+		else:
+			enemy = Cupcake()
 
 		enemy.pickable = self.spawn_pickable
 		enemy.my_constructor(PARENT_NODE = self.spawn_root, SPAWN_TRANSFORM = m)

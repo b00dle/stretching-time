@@ -4,6 +4,8 @@
 import avango
 import avango.gua
 
+from lib.game.misc.Glumb import Glumb
+from lib.game.enemy.Cupcake import Cupcake
 
 class Scene:
 
@@ -51,9 +53,12 @@ class Scene:
             avango.gua.make_rot_mat(0,0,1,0) * \
             avango.gua.make_scale_mat(5,5,5)
         '''
-        
-        PARENT_NODE.Children.value.append(self.glumb_mouth)
-        
+
+        self.glumb = Glumb()
+        self.glumb.my_constructor(PARENT_NODE)
+        self.glumb.node.Transform.value = avango.gua.make_trans_mat(0,0,-30) * \
+            avango.gua.make_scale_mat(5,5,5)
+
         '''
         ## init ground
         self.ground_geometry = _loader.create_geometry_from_file("ground_geometry", "data/objects/cube.obj", avango.gua.LoaderFlags.DEFAULTS)
