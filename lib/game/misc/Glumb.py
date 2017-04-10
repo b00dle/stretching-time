@@ -75,7 +75,7 @@ class Glumb(avango.script.Script):
         )
         self._mouth_black.Material.value.set_uniform(
             "Color",
-            avango.gua.Vec4(0.0,0.0,0.0,1.0)
+            avango.gua.Vec4(255/256.0, 186.0/256.0, 210.0/256.0, 1.0)
         )
         self._mouth_transform.Children.value.append(self._mouth_black)
 

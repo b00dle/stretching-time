@@ -69,7 +69,7 @@ class RadialSpawner(avango.script.Script):
 				s = kill_list[0]
 				kill_list.pop(0)
 			
-	def spawn(self, SPAWN_POS, MOVEMENT_SPEED, MOVEMENT_DIR, SPAWN_TYPE=3, SPAWN_OBJ=None):
+	def spawn(self, SPAWN_POS, MOVEMENT_SPEED, MOVEMENT_DIR, SPAWN_TYPE=3, SPAWN_OBJ=None, AUTO_ROTATE=True):
 		''' Spawns random spawn at random location. '''
 		spawn = SPAWN_OBJ
 		if spawn == None:
@@ -88,11 +88,14 @@ class RadialSpawner(avango.script.Script):
 
 		spawn.movement_speed = MOVEMENT_SPEED
 		spawn.movement_dir = MOVEMENT_DIR
-		spawn.rotation_speed = random.uniform(0.5,5.0)
-		spawn.rotation_axis.x = random.uniform(0.0,1.0)
-		spawn.rotation_axis.y = random.uniform(0.0,1.0)
-		spawn.rotation_axis.z = random.uniform(0.0,1.0)
-		spawn.rotation_axis.normalize()
+		if AUTO_ROTATE:
+			spawn.rotation_speed = random.uniform(0.5,5.0)
+			spawn.rotation_axis.x = random.uniform(0.0,1.0)
+			spawn.rotation_axis.y = random.uniform(0.0,1.0)
+			spawn.rotation_axis.z = random.uniform(0.0,1.0)
+			spawn.rotation_axis.normalize()
+		else:
+			spawn.rotation_speed = 0.0
 		spawn.setScale(self.spawn_scale)
 
 		self.spawns_dict[spawn.game_object_id] = spawn

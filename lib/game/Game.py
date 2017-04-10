@@ -146,7 +146,8 @@ class Game(avango.script.Script):
                     for spawn_id in self.spawner.spawns_dict:
                         spawn = self.spawner.spawns_dict[spawn_id]
                         if spawn.is_collision_trigger() and bullet.intersects(spawn.get_bounding_box()):
-                            tool_collide_list.append(spawn_id)
+                            if spawn_id not in tool_collide_list:
+                                tool_collide_list.append(spawn_id)
                             bullet_kill_list.append(bullet_id)
                 if len(bullet_kill_list) > 0:
                     projectile_spawner.remove_spawns(bullet_kill_list)

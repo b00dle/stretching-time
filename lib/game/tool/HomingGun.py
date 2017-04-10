@@ -91,7 +91,10 @@ class HomingGun(GameObject):
                        GEOMETRY_SIZE = 1.0):
         self.target_spawner = TARGET_SPAWNER
 
-        self._offset_mat = avango.gua.make_scale_mat(GEOMETRY_SIZE, GEOMETRY_SIZE, GEOMETRY_SIZE)
+        t = avango.gua.Vec3(0.1,0,0)
+
+        self._offset_mat = avango.gua.make_trans_mat(t) *\
+            avango.gua.make_scale_mat(GEOMETRY_SIZE, GEOMETRY_SIZE, GEOMETRY_SIZE)
         
         # get trimesh loader to load external tri-meshes
         _loader = avango.gua.nodes.TriMeshLoader()
@@ -99,11 +102,11 @@ class HomingGun(GameObject):
         # create geometry
         self.bounding_geometry = _loader.create_geometry_from_file(
             "homing_geometry_GOID_"+str(self.game_object_id),
-            "data/objects/plunger_op.obj",
-            avango.gua.LoaderFlags.DEFAULTS
+            "data/objects/launcher/launcher.obj",
+            avango.gua.LoaderFlags.DEFAULTS | avango.gua.LoaderFlags.LOAD_MATERIALS
         )
         self.bounding_geometry.Transform.value = self._offset_mat
-        self.bounding_geometry.Tags.value = ["invisible"]
+        #self.bounding_geometry.Tags.value = ["invisible"]
 
         self._barrel_exit_node = avango.gua.nodes.TransformNode(
             Name = "homing_barrel_exit_GOID_"+str(self.game_object_id)
@@ -126,11 +129,12 @@ class HomingGun(GameObject):
         PARENT_NODE.Children.value.append(self.bounding_geometry)
 
         self.projectile_spawner = RadialSpawner()
-        self.projectile_spawner.spawn_scale = 0.1
+        self.projectile_spawner.spawn_scale = 0.35
         self.projectile_spawner.my_constructor(
             PARENT_NODE = SPAWN_PARENT,
             VANISH_DISTANCE = 50.0
         )
+        self.projectile_spawner.spawn_root.Transform.value = avango.gua.make_trans_mat(t)
 
     def _calc_pick_result(self):
         ''' selects homing target. '''
@@ -188,7 +192,8 @@ class HomingGun(GameObject):
                 SPAWN_POS = spawn_pos,
                 MOVEMENT_SPEED = 0.1,
                 MOVEMENT_DIR = movement_dir,
-                SPAWN_OBJ = projectile
+                SPAWN_OBJ = projectile,
+                AUTO_ROTATE = False
             )
 
     @field_has_changed(sf_gun_mat)
