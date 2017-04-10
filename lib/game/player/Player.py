@@ -29,18 +29,18 @@ class Player(GameObject):
         PARENT_NODE.Children.value.append(self.node)
 
         # create geometry
-        self.geometry = _loader.create_geometry_from_file(
+        self.bounding_geometry = _loader.create_geometry_from_file(
             "player_geometry_GOID_"+str(self.get_num_game_objects()),
             "data/objects/frame.obj",
             avango.gua.LoaderFlags.DEFAULTS
         )
-        self.geometry.Transform.value = OFFSET_MAT
-        self.geometry.Material.value.set_uniform(
+        self.bounding_geometry.Transform.value = OFFSET_MAT
+        self.bounding_geometry.Material.value.set_uniform(
             "Color",
             avango.gua.Vec4(1.0,0.0,0.0,1.0)
         )
         # append to parent
-        self.node.Children.value.append(self.geometry)
+        self.node.Children.value.append(self.bounding_geometry)
 
         self.sf_mat.value = avango.gua.make_identity_mat()
 
@@ -92,4 +92,4 @@ class Player(GameObject):
     @field_has_changed(sf_mat)
     def sf_mat_changed(self):
        ''' update transformation '''
-       pass#self.geometry.Transform.value = self.sf_mat.value * self._offset_mat
+       pass#self.bounding_geometry.Transform.value = self.sf_mat.value * self._offset_mat

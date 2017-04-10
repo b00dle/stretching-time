@@ -7,10 +7,10 @@ import avango.script
 
 from lib.game.MovingObject import MovingObject
 
-class Enemy(MovingObject):
-    ''' Defines base interface for all enemy objects in the game. '''
+class Spawn(MovingObject):
+    ''' Defines base interface for all Spawn objects in the game. '''
 
     def __init__(self):
-        self.super(Enemy).__init__()
+        self.super(Spawn).__init__()
 
         self.pickable = False

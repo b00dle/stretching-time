@@ -6,12 +6,16 @@ class GameObject(avango.script.Script):
     ''' Defines base interface for all visualizable objects in the game. '''
 
     instance_count = 0
+    sf_destroyed = avango.SFBool()
 
     def __init__(self):
         self.super(GameObject).__init__()
 
+        # used as a transmitter to let connected fields know when a GameObject is destroyed
+        self.sf_destroyed.value = False
+
         # stores an avango.gua.nodes.TrimeshNode to visualize instance 
-        self.geometry = None
+        self.bounding_geometry = None
         
         # stores a reference id to this instance
         self.game_object_id = GameObject.instance_count
@@ -36,16 +40,18 @@ class GameObject(avango.script.Script):
     def cleanup(self):
         ''' cleans up pending connections into the application, so that object can be deleted. '''
         self.always_evaluate(False)
-        if self.geometry != None:
-            self.geometry.Parent.value.Children.value.remove(self.geometry)
+        self.sf_destroyed.value = True
+        self.sf_destroyed.disconnect()
+        if self.bounding_geometry != None:
+            self.bounding_geometry.Parent.value.Children.value.remove(self.bounding_geometry)
 
     def get_just_spawned(self):
         ''' getter for self._just_spawned. '''
         return self._just_spawned 
 
     def get_bounding_box(self):
-        ''' returns the bounding box of the game object geometry. '''
-        return self.geometry.BoundingBox.value
+        ''' returns the bounding box of the game object bounding_geometry. '''
+        return self.bounding_geometry.BoundingBox.value
 
     def is_collision_trigger(self):
         ''' returns true if can_trigger_collision == True,

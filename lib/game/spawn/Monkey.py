@@ -5,10 +5,10 @@ import avango
 import avango.gua
 import avango.script
 # import BC
-from lib.game.enemy.Enemy import Enemy
+from lib.game.spawn.Spawn import Spawn
 
-class Monkey(Enemy):
-    ''' Simple enemy using monkey head. TODO setup better bounding box '''
+class Monkey(Spawn):
+    ''' Simple Spawn using monkey head. TODO setup better bounding box '''
     def __init__(self):
         self.super(Monkey).__init__()
 
@@ -23,12 +23,12 @@ class Monkey(Enemy):
         if self.pickable:
             loader_flags = loader_flags | avango.gua.LoaderFlags.MAKE_PICKABLE
 
-        self.geometry = _loader.create_geometry_from_file(
-            "monkey_enemy_geometry_GOID_"+str(self.game_object_id),
+        self.bounding_geometry = _loader.create_geometry_from_file(
+            "monkey_spawn_geometry_GOID_"+str(self.game_object_id),
             "data/objects/monkey.obj",
             loader_flags
         )
-        self.geometry.Transform.value = SPAWN_TRANSFORM
+        self.bounding_geometry.Transform.value = SPAWN_TRANSFORM
 
         # append to parent
-        PARENT_NODE.Children.value.append(self.geometry)
+        PARENT_NODE.Children.value.append(self.bounding_geometry)

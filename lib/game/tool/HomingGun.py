@@ -47,11 +47,11 @@ class HomingGun(GameObject):
         self._calc_pick_result()
         if self.pick_result != None: # intersection found
             parent = self.selection_geometry.Parent.value
-            if len(self.selection_geometry.Tags.value) == 0 and parent != self.pick_result.geometry:
+            if len(self.selection_geometry.Tags.value) == 0 and parent != self.pick_result.bounding_geometry:
                 self.selection_geometry.Parent.value.Children.value.remove(self.selection_geometry)
             elif len(self.selection_geometry.Tags.value) != 0:
                 self.selection_geometry.Tags.value = []
-                self.pick_result.geometry.Children.value.append(self.selection_geometry)
+                self.pick_result.bounding_geometry.Children.value.append(self.selection_geometry)
         elif self.selection_geometry != None:
             parent = self.selection_geometry.Parent.value
             if parent != None:
@@ -97,19 +97,19 @@ class HomingGun(GameObject):
         _loader = avango.gua.nodes.TriMeshLoader()
 
         # create geometry
-        self.geometry = _loader.create_geometry_from_file(
+        self.bounding_geometry = _loader.create_geometry_from_file(
             "homing_geometry_GOID_"+str(self.game_object_id),
             "data/objects/plunger_op.obj",
             avango.gua.LoaderFlags.DEFAULTS
         )
-        self.geometry.Transform.value = self._offset_mat
-        self.geometry.Tags.value = ["invisible"]
+        self.bounding_geometry.Transform.value = self._offset_mat
+        self.bounding_geometry.Tags.value = ["invisible"]
 
         self._barrel_exit_node = avango.gua.nodes.TransformNode(
             Name = "homing_barrel_exit_GOID_"+str(self.game_object_id)
         )
         self._barrel_exit_node.Transform.value = avango.gua.make_trans_mat(0,0,-1.0)
-        self.geometry.Children.value.append(self._barrel_exit_node)
+        self.bounding_geometry.Children.value.append(self._barrel_exit_node)
 
         self.selection_geometry =  _loader.create_geometry_from_file(
             "homing_selection_geometry_GOID_"+str(self.game_object_id),
@@ -123,10 +123,10 @@ class HomingGun(GameObject):
         self.selection_geometry.Tags.value = ["invisible"]
 
         # append to parent
-        PARENT_NODE.Children.value.append(self.geometry)
+        PARENT_NODE.Children.value.append(self.bounding_geometry)
 
         self.projectile_spawner = RadialSpawner()
-        self.projectile_spawner.spawn_scale = 0.05
+        self.projectile_spawner.spawn_scale = 0.1
         self.projectile_spawner.my_constructor(
             PARENT_NODE = SPAWN_PARENT,
             VANISH_DISTANCE = 50.0
@@ -139,10 +139,10 @@ class HomingGun(GameObject):
 
         self.pick_result = None
         min_angle = 0
-        tool_pos = self.geometry.WorldTransform.value.get_translate()
+        tool_pos = self.bounding_geometry.WorldTransform.value.get_translate()
         for spawn_id in self.target_spawner.spawns_dict:
             spawn = self.target_spawner.spawns_dict[spawn_id]
-            pos = spawn.geometry.WorldTransform.value.get_translate()
+            pos = spawn.bounding_geometry.WorldTransform.value.get_translate()
             dist = (pos - tool_pos).length()
             temp_angle = self._angle_to_ray(pos)
             if dist < self.pick_length and temp_angle < self.pick_angle_tolerance:
@@ -152,7 +152,7 @@ class HomingGun(GameObject):
 
     def _angle_to_ray(self, POS):
         ''' calculates the angle between vector of of pos to origin and direction of pointing. '''
-        start = self.geometry.WorldTransform.value.get_translate()
+        start = self.bounding_geometry.WorldTransform.value.get_translate()
         end = self._barrel_exit_node.WorldTransform.value.get_translate()
         direction = end - start
         direction.normalize()
@@ -172,7 +172,7 @@ class HomingGun(GameObject):
     def shoot(self):
         ''' spawns shooting projectile. '''
         if self.pick_result != None:
-            spawn_pos = self.geometry.WorldTransform.value.get_translate()
+            spawn_pos = self.bounding_geometry.WorldTransform.value.get_translate()
             exit_pos = self._barrel_exit_node.WorldTransform.value.get_translate()
             movement_dir = exit_pos - spawn_pos
             movement_dir.normalize()
@@ -180,7 +180,7 @@ class HomingGun(GameObject):
             projectile = HomingProjectile()
             projectile.my_constructor(
                 PARENT_NODE = self.projectile_spawner.spawn_root,
-                TARGET = self.pick_result.geometry,
+                TARGET = self.pick_result,
                 SPAWN_TRANSFORM = avango.gua.make_trans_mat(spawn_pos)
             )
 
@@ -198,7 +198,7 @@ class HomingGun(GameObject):
         m_t = avango.gua.make_trans_mat(t)
         m_r = avango.gua.make_rot_mat(self.sf_gun_mat.value.get_rotate())
         m = m_t * m_r
-        self.geometry.Transform.value = m * self._offset_mat
+        self.bounding_geometry.Transform.value = m * self._offset_mat
 
     @field_has_changed(sf_gun_trigger)
     def sf_gun_trigger_changed(self):

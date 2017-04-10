@@ -5,12 +5,12 @@ import avango
 import avango.gua
 import avango.script
 # import BC
-from lib.game.enemy.Enemy import Enemy
+from lib.game.spawn.Spawn import Spawn
 
-class Sphere(Enemy):
-    ''' Simple enemy using Sphere head. '''
+class Box(Spawn):
+    ''' Simple Spawn using Box head. '''
     def __init__(self):
-        self.super(Sphere).__init__()
+        self.super(Box).__init__()
 
     def my_constructor(self,
                        PARENT_NODE = None, 
@@ -18,17 +18,18 @@ class Sphere(Enemy):
         # get trimesh loader to load external tri-meshes
         _loader = avango.gua.nodes.TriMeshLoader()
 
-        # create geometry
+        # create bounding_geometry
         loader_flags = avango.gua.LoaderFlags.DEFAULTS
         if self.pickable:
             loader_flags = loader_flags | avango.gua.LoaderFlags.MAKE_PICKABLE
 
-        self.geometry = _loader.create_geometry_from_file(
-            "sphere_enemy_geometry_GOID_"+str(self.game_object_id),
-            "data/objects/sphere.obj",
-            loader_flags
+        self.bounding_geometry = _loader.create_geometry_from_file(
+            "box_spawn_bounding_geometry_GOID_"+str(self.game_object_id),
+            "data/objects/cube.obj",
+            loader_flags 
         )
-        self.geometry.Transform.value = SPAWN_TRANSFORM
+            
+        self.bounding_geometry.Transform.value = SPAWN_TRANSFORM
 
         # append to parent
-        PARENT_NODE.Children.value.append(self.geometry)
+        PARENT_NODE.Children.value.append(self.bounding_geometry)

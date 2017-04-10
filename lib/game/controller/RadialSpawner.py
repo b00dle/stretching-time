@@ -7,9 +7,10 @@ import avango.script
 from avango.script import field_has_changed
 import random
 
-from lib.game.enemy.Monkey import Monkey
-from lib.game.enemy.Sphere import Sphere
-from lib.game.enemy.Box import Box
+from lib.game.spawn.Monkey import Monkey
+from lib.game.spawn.Sphere import Sphere
+from lib.game.spawn.Box import Box
+from lib.game.spawn.Cupcake import Cupcake
 
 class RadialSpawner(avango.script.Script):
 	''' Manages creation of spawned objects. Vanishing by distances to spawn root evaluation. '''
@@ -59,7 +60,7 @@ class RadialSpawner(avango.script.Script):
 		kill_list = []
 		for spawn_id in self.spawns_dict:
 			spawn = self.spawns_dict[spawn_id]
-			spawn_pos = spawn.geometry.WorldTransform.value.get_translate()
+			spawn_pos = spawn.bounding_geometry.WorldTransform.value.get_translate()
 			if (spawn_pos - root_pos).length() > self.vanish_distance:
 				kill_list.append(spawn_id)
 		if len(kill_list) > 0: 
@@ -68,7 +69,7 @@ class RadialSpawner(avango.script.Script):
 				s = kill_list[0]
 				kill_list.pop(0)
 			
-	def spawn(self, SPAWN_POS, MOVEMENT_SPEED, MOVEMENT_DIR, SPAWN_TYPE=2, SPAWN_OBJ=None):
+	def spawn(self, SPAWN_POS, MOVEMENT_SPEED, MOVEMENT_DIR, SPAWN_TYPE=3, SPAWN_OBJ=None):
 		''' Spawns random spawn at random location. '''
 		spawn = SPAWN_OBJ
 		if spawn == None:
@@ -76,8 +77,10 @@ class RadialSpawner(avango.script.Script):
 				spawn = Monkey()
 			elif SPAWN_TYPE == 1:
 				spawn = Sphere()
-			else:
+			elif SPAWN_TYPE == 2:
 				spawn = Box()
+			else:
+				spawn = Cupcake()
 			spawn.my_constructor(
 				PARENT_NODE = self.spawn_root,
 				SPAWN_TRANSFORM = avango.gua.make_trans_mat(SPAWN_POS)

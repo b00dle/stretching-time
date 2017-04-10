@@ -154,14 +154,14 @@ class Game(avango.script.Script):
         player_collide_list = [spawn_id for spawn_id in player_collide_list if spawn_id not in tool_collide_list]
         for spawn_id in player_collide_list:
             spawn = self.spawner.spawns_dict[spawn_id]
-            spawn.geometry.Material.value.set_uniform(
+            spawn.bounding_geometry.Material.value.set_uniform(
                 "Color",
                 avango.gua.Vec4(1.0,0.0,0.0,1.0)
             )
 
         for spawn_id in tool_collide_list:
             spawn = self.spawner.spawns_dict[spawn_id]
-            s_pos = spawn.geometry.WorldTransform.value.get_translate()
+            s_pos = spawn.bounding_geometry.WorldTransform.value.get_translate()
             self.destruction_spawner.spawn_destruction(
                 SPAWN_POS = s_pos,
                 SPAWN_SCALE = 0.05,

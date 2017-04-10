@@ -40,7 +40,7 @@ class MovingObject(GameObject):
 
         self._calc_frame_times()
         
-        if self.geometry == None:
+        if self.bounding_geometry == None:
             return
 
         if self.can_move:
@@ -61,17 +61,17 @@ class MovingObject(GameObject):
 
         # create transformation matrix (global)
         m = avango.gua.make_trans_mat(t.x, t.y, t.z) * \
-            self.geometry.WorldTransform.value * \
+            self.bounding_geometry.WorldTransform.value * \
             avango.gua.make_rot_mat(a, self.rotation_axis.x, self.rotation_axis.y, self.rotation_axis.z)
         
         # apply transformation update (transformation update - local)
-        self.geometry.Transform.value = avango.gua.make_inverse_mat(self.geometry.Parent.value.WorldTransform.value) * m
+        self.bounding_geometry.Transform.value = avango.gua.make_inverse_mat(self.bounding_geometry.Parent.value.WorldTransform.value) * m
 
     def setScale(self, SCALE):
         ''' applies given uniform scale factor to geometry. '''
-        t = self.geometry.Transform.value.get_translate()
-        r = self.geometry.Transform.value.get_rotate()
-        self.geometry.Transform.value = avango.gua.make_trans_mat(t.x, t.y, t.z) * \
+        t = self.bounding_geometry.Transform.value.get_translate()
+        r = self.bounding_geometry.Transform.value.get_rotate()
+        self.bounding_geometry.Transform.value = avango.gua.make_trans_mat(t.x, t.y, t.z) * \
             avango.gua.make_rot_mat(r) * \
             avango.gua.make_scale_mat(SCALE, SCALE, SCALE)
 

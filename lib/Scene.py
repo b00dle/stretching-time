@@ -5,7 +5,6 @@ import avango
 import avango.gua
 
 from lib.game.misc.Glumb import Glumb
-from lib.game.enemy.Cupcake import Cupcake
 
 class Scene:
 

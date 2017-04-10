@@ -8,10 +8,10 @@ import avango.script
 import random
 
 # import BC
-from lib.game.enemy.Enemy import Enemy
+from lib.game.spawn.Spawn import Spawn
 
-class Cupcake(Enemy):
-    ''' Simple enemy using monkey head. TODO setup better bounding box '''
+class Cupcake(Spawn):
+    ''' Simple Spawn using monkey head. TODO setup better bounding box '''
     def __init__(self):
         self.super(Cupcake).__init__()
 
@@ -58,8 +58,8 @@ class Cupcake(Enemy):
         if self.pickable:
             loader_flags = loader_flags | avango.gua.LoaderFlags.MAKE_PICKABLE
 
-        self.geometry = _loader.create_geometry_from_file(
-            "cupcake_enemy_geometry_GOID_"+str(self.game_object_id),
+        self.bounding_geometry = _loader.create_geometry_from_file(
+            "cupcake_spawn_geometry_GOID_"+str(self.game_object_id),
             "data/objects/cube.obj",
             loader_flags
         )
@@ -67,10 +67,10 @@ class Cupcake(Enemy):
         self._transform_node = avango.gua.nodes.TransformNode(
             Name = "cupcake_geometry_transform_GOID_"+str(self.game_object_id)
         )
-        self._transform_node.Transform.connect_from(self.geometry.Transform)
+        self._transform_node.Transform.connect_from(self.bounding_geometry.Transform)
 
-        self.geometry.Transform.value = SPAWN_TRANSFORM
-        self.geometry.Tags.value = ["invisible"]
+        self.bounding_geometry.Transform.value = SPAWN_TRANSFORM
+        self.bounding_geometry.Tags.value = ["invisible"]
 
         self._cup_geometry = _loader.create_geometry_from_file(
             "cup_GOID_"+str(self.game_object_id),
@@ -106,7 +106,7 @@ class Cupcake(Enemy):
         self._transform_node.Children.value.append(self._cream_geometry)
         
         # append to parent
-        PARENT_NODE.Children.value.append(self.geometry)
+        PARENT_NODE.Children.value.append(self.bounding_geometry)
         PARENT_NODE.Children.value.append(self._transform_node)
 
     def cleanup(self):

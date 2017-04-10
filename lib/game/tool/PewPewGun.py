@@ -47,22 +47,22 @@ class PewPewGun(GameObject):
         _loader = avango.gua.nodes.TriMeshLoader()
 
         # create geometry
-        self.geometry = _loader.create_geometry_from_file(
+        self.bounding_geometry = _loader.create_geometry_from_file(
             "pewpew_geometry_GOID_"+str(self.game_object_id),
             "data/objects/plunger_op.obj",
             avango.gua.LoaderFlags.DEFAULTS
         )
-        self.geometry.Transform.value = self._offset_mat
-        self.geometry.Tags.value = ["invisible"]
+        self.bounding_geometry.Transform.value = self._offset_mat
+        self.bounding_geometry.Tags.value = ["invisible"]
 
         self._barrel_exit_node = avango.gua.nodes.TransformNode(
             Name = "pewpew_barrel_exit_GOID_"+str(self.game_object_id)
         )
         self._barrel_exit_node.Transform.value = avango.gua.make_trans_mat(0,0,-1.0)
-        self.geometry.Children.value.append(self._barrel_exit_node)
+        self.bounding_geometry.Children.value.append(self._barrel_exit_node)
 
         # append to parent
-        PARENT_NODE.Children.value.append(self.geometry)
+        PARENT_NODE.Children.value.append(self.bounding_geometry)
 
         self.projectile_spawner = RadialSpawner()
         self.projectile_spawner.spawn_scale = 0.05
@@ -78,7 +78,7 @@ class PewPewGun(GameObject):
 
     def shoot(self):
         ''' spawns shooting projectile. '''
-        spawn_pos = self.geometry.WorldTransform.value.get_translate()
+        spawn_pos = self.bounding_geometry.WorldTransform.value.get_translate()
         exit_pos = self._barrel_exit_node.WorldTransform.value.get_translate()
         movement_dir = exit_pos - spawn_pos
         movement_dir.normalize()
@@ -95,7 +95,7 @@ class PewPewGun(GameObject):
         m_t = avango.gua.make_trans_mat(t)
         m_r = avango.gua.make_rot_mat(self.sf_gun_mat.value.get_rotate())
         m = m_t * m_r
-        self.geometry.Transform.value = m * self._offset_mat
+        self.bounding_geometry.Transform.value = m * self._offset_mat
 
     @field_has_changed(sf_gun_trigger)
     def sf_gun_trigger_changed(self):
