@@ -30,6 +30,8 @@ class Game(avango.script.Script):
         self.pointer_input = POINTER_INPUT
         self.pointer_input.showDebugGeometry(False)
 
+        self._game_over = False
+
         self._head_pos_buffer = []
         self._velocity_norm = 0.005 # experimentally set 
 
@@ -97,9 +99,10 @@ class Game(avango.script.Script):
 
     def evaluate(self):
         ''' Frame base evaluation function to update game logic. '''
-        self._calc_time_stretch()
-        self._move_player()
-        self._evaluate_collisions()
+        if not self._game_over:
+            self._calc_time_stretch()
+            self._move_player()
+            self._evaluate_collisions()
 
     def _calc_time_stretch(self):
         ''' calculates a global factor for all time based animations. '''
@@ -122,6 +125,15 @@ class Game(avango.script.Script):
         pos.z = 0.0
         self.player.set_transform(pos)
 
+    def _end_game(self, REASON='Player died.'):
+        ''' function called when game is over. REASON should specify how the game ended. '''
+        self.player.bounding_geometry.Material.value.set_uniform(
+            "Color",
+            avango.gua.Vec4(1.0,0.0,0.0,1.0)
+        )
+        self._game_over = True
+        # TODO perform cleanup
+
     def _evaluate_collisions(self):
         ''' evaluates collisions in the game. '''
         player_collide_list = []
@@ -130,12 +142,15 @@ class Game(avango.script.Script):
             spawn = self.spawner.spawns_dict[spawn_id]
             if not spawn.is_collision_trigger():
                 continue
+            # evaluate collisions with player
             if self.player.intersects(spawn.get_bounding_box()):
                 player_collide_list.append(spawn_id)
             
+            # evaluate collisions with sword
             if self.dyrion != None and self.dyrion.intersects(spawn.get_bounding_box()):
                 tool_collide_list.append(spawn_id)
 
+            # evaluate collisions with homing gun 
             if self.homing != None:
                 bullet_kill_list = []
                 projectile_spawner = self.homing.projectile_spawner
@@ -151,15 +166,8 @@ class Game(avango.script.Script):
                             bullet_kill_list.append(bullet_id)
                 if len(bullet_kill_list) > 0:
                     projectile_spawner.remove_spawns(bullet_kill_list)
-
-        player_collide_list = [spawn_id for spawn_id in player_collide_list if spawn_id not in tool_collide_list]
-        for spawn_id in player_collide_list:
-            spawn = self.spawner.spawns_dict[spawn_id]
-            spawn.bounding_geometry.Material.value.set_uniform(
-                "Color",
-                avango.gua.Vec4(1.0,0.0,0.0,1.0)
-            )
-
+ 
+        # apply effects of tool collisions
         for spawn_id in tool_collide_list:
             spawn = self.spawner.spawns_dict[spawn_id]
             s_pos = spawn.bounding_geometry.WorldTransform.value.get_translate()
@@ -171,4 +179,21 @@ class Game(avango.script.Script):
             )
 
         self.spawner.remove_spawns(tool_collide_list)
+
+        # apply effect of player collisions
+        player_collide_list = [spawn_id for spawn_id in player_collide_list if spawn_id not in tool_collide_list]
+        '''
+        for spawn_id in player_collide_list:
+            spawn = self.spawner.spawns_dict[spawn_id]
+            spawn.bounding_geometry.Material.value.set_uniform(
+                "Color",
+                avango.gua.Vec4(1.0,0.0,0.0,1.0)
+            )
+        '''
+        if len(player_collide_list) > 0:
+            self.player.subtract_life()
+            self.spawner.remove_spawns(player_collide_list)
+
+            if self.player.is_dead():
+                self._end_game(REASON='Player died.')
         

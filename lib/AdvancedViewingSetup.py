@@ -69,6 +69,11 @@ class StereoViewingSetup:
         self.resolve_pass.BackgroundMode.value = avango.gua.BackgroundMode.SKYMAP_TEXTURE        
         self.resolve_pass.BackgroundTexture.value = "/opt/guacamole/resources/skymaps/above_clouds.jpg"
 
+        # FOG
+        #self.resolve_pass.EnableFog.value = True
+        #self.resolve_pass.FogStart.value = 25
+        #self.resolve_pass.FogEnd.value = 35
+
         self.pipeline_description = avango.gua.nodes.PipelineDescription(Passes = [])
         self.pipeline_description.EnableABuffer.value = True        
         self.pipeline_description.Passes.value.append(avango.gua.nodes.TriMeshPassDescription())

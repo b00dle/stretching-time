@@ -7,6 +7,8 @@ from lib.game.GameObject import GameObject
 import lib.game.Globals
 import time
 
+from lib.game.misc.Heart import Heart
+
 class Player(GameObject):
     ''' Defines game logicfor the player '''
 
@@ -15,7 +17,7 @@ class Player(GameObject):
     def __init__(self):
         self.super(Player).__init__()
 
-    def my_constructor(self, PARENT_NODE=None, OFFSET_MAT=avango.gua.make_identity_mat()):
+    def my_constructor(self, PARENT_NODE=None, OFFSET_MAT=avango.gua.make_identity_mat(), MAX_LIFE_COUNT=3):
         # get trimesh loader to load external tri-meshes
         _loader = avango.gua.nodes.TriMeshLoader()
 
@@ -28,6 +30,19 @@ class Player(GameObject):
         # append to parent
         PARENT_NODE.Children.value.append(self.node)
 
+        # add life visualizations
+        if MAX_LIFE_COUNT <= 0:
+            MAX_LIFE_COUNT = 1
+
+        self._life_list = []
+        for i in range(0, MAX_LIFE_COUNT):
+            h = Heart()
+            h.my_constructor(PARENT_NODE=self.node, NAME="life_"+str(i))
+            x_step = 0.07
+            h.node.Transform.value = avango.gua.make_trans_mat(-0.1+i*x_step, 0.15, 0) * \
+                avango.gua.make_scale_mat(0.03,0.03,0.03)
+            self._life_list.append(h)
+
         # create geometry
         self.bounding_geometry = _loader.create_geometry_from_file(
             "player_geometry_GOID_"+str(self.get_num_game_objects()),
@@ -37,12 +52,39 @@ class Player(GameObject):
         self.bounding_geometry.Transform.value = OFFSET_MAT
         self.bounding_geometry.Material.value.set_uniform(
             "Color",
-            avango.gua.Vec4(1.0,0.0,0.0,1.0)
+            avango.gua.Vec4(0.0,1.0,0.0,1.0)
         )
         # append to parent
         self.node.Children.value.append(self.bounding_geometry)
 
         self.sf_mat.value = avango.gua.make_identity_mat()
+
+    def subtract_life(self):
+        ''' subtracts a life from the player. 
+            Returns False if player has no more lives to subtract.
+            True otherwise. '''
+        for h in self._life_list:
+            if not h.is_dead():
+                h.set_dead()
+                return True
+        return False
+
+    def add_life(self):
+        ''' subtracts a life from the player. 
+            Returns False if player has no more lives to subtract.
+            True otherwise. '''
+        for h in reversed(self._life_list):
+            if h.is_dead():
+                h.set_dead(False)
+                return True
+        return False
+
+    def is_dead(self):
+        ''' Returns True if all lives of the player have been used. '''
+        for h in self._life_list:
+            if not h.is_dead():
+                return False
+        return True
 
     def move(self, TRANSLATE):
         ''' moves the player by defined traslation. '''
