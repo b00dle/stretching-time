@@ -12,9 +12,9 @@ from lib.game.player.Player import Player
 from lib.game.tool.SwordDyrion import SwordDyrion
 from lib.game.tool.PewPewGun import PewPewGun
 from lib.game.tool.HomingGun import HomingGun
+from lib.game.stage.GameStage import GameStage
+from lib.game.stage.PlayStage import PlayStage
 import lib.game.Globals
-
-import random
 
 class Game(avango.script.Script):
     ''' Class responsible for managing game logic. '''
@@ -32,10 +32,8 @@ class Game(avango.script.Script):
 
         self._game_over = False
 
-        self._head_pos_buffer = []
-        self._velocity_norm = 0.005 # experimentally set 
-
-        self._test()
+        self.head_pos_buffer = []
+        self.velocity_norm = 0.005 # experimentally set 
 
         # init destruction spawner
         self.destruction_spawner = DestructionSpawner()
@@ -46,14 +44,9 @@ class Game(avango.script.Script):
         self.spawner.my_constructor(
             PARENT_NODE = self.scenegraph.Root.value,
             Z_VANISH = 2,
-            AUTO_SPAWN = True
+            AUTO_SPAWN = False
         )
-        self.spawner.auto_spawn_min_pos = avango.gua.Vec3(-1.5, 1.0, -70)
-        self.spawner.auto_spawn_max_pos = avango.gua.Vec3(1.5, -1.0, -70)
-        self.spawner.max_auto_spawns = 10
-        self.spawner.spawn_scale = 0.3
-        self.spawner.spawn_pickable = True
-
+        
         # init player
         p_offset = avango.gua.make_trans_mat(0,0,0.0) * avango.gua.make_scale_mat(0.1,0.1,0.1)
         self.player = Player()
@@ -62,7 +55,7 @@ class Game(avango.script.Script):
         # init sword tool
         self.dyrion = SwordDyrion()
         self.dyrion.my_constructor(PARENT_NODE = self.player.node, GEOMETRY_SIZE = 0.5)
-        self.dyrion.sf_sword_mat.connect_from(self.pointer_input.pointer_node.Transform)
+        self.dyrion.hide()
         
         # init gun tool
         '''
@@ -84,39 +77,20 @@ class Game(avango.script.Script):
             TARGET_SPAWNER = self.spawner,
             GEOMETRY_SIZE = 0.3
         )
-        self.homing.sf_gun_mat.connect_from(self.pointer_input.pointer_node.Transform)
-        self.homing.sf_gun_trigger.connect_from(self.pointer_input.sf_button)
-        self.homing.pick_length = 50.0
-        self.homing.pick_angle_tolerance = 15.0
+        self.homing.hide()
+        
+        self.debug_stretch_factor = 2.0
 
+        self.current_stage = PlayStage()
+        self.current_stage.my_constructor(GAME=self)
+        
         self.always_evaluate(True)
-
-        self._debug_stretch_factor = 2.0
-
-    def _test(self):
-        ''' debug function for testing purposes. '''
-        pass
 
     def evaluate(self):
         ''' Frame base evaluation function to update game logic. '''
-        if not self._game_over:
-            self._calc_time_stretch()
-            self._move_player()
-            self._evaluate_collisions()
-
-    def _calc_time_stretch(self):
-        ''' calculates a global factor for all time based animations. '''
-        head_pos = self.head_node.WorldTransform.value.get_translate()
-        self._head_pos_buffer.append(head_pos)
-        if len(self._head_pos_buffer) == 10:
-            self._head_pos_buffer.pop(0)
-        lib.game.Globals.TIME_FACTOR = self._debug_stretch_factor * self._calc_velocity_factor()
-
-    def _calc_velocity_factor(self):
-        ''' calculates a velocity value from average movement speed of the head_node. '''
-        sum_velocity = sum([(b-a).length() for a,b in zip(self._head_pos_buffer, self._head_pos_buffer[1:])])
-        velocity_avg = sum_velocity / len(self._head_pos_buffer)
-        return velocity_avg / self._velocity_norm
+        self._move_player()
+        if not self._game_over and self.current_stage.is_running():
+            self.current_stage.evaluate_stage()
 
     def _move_player(self):
         ''' Moves player by offset between this and last frame's head position. '''
@@ -125,75 +99,19 @@ class Game(avango.script.Script):
         pos.z = 0.0
         self.player.set_transform(pos)
 
-    def _end_game(self, REASON='Player died.'):
+    def start_game(self):
+        print("game started.")
+        self._game_over = False
+        self.current_stage.start()
+
+    def end_game(self, REASON='Player died.'):
         ''' function called when game is over. REASON should specify how the game ended. '''
+        print("game over.")
         self.player.bounding_geometry.Material.value.set_uniform(
             "Color",
             avango.gua.Vec4(1.0,0.0,0.0,1.0)
         )
         self._game_over = True
+        self.current_stage.stop()
         # TODO perform cleanup
-
-    def _evaluate_collisions(self):
-        ''' evaluates collisions in the game. '''
-        player_collide_list = []
-        tool_collide_list = []
-        for spawn_id in self.spawner.spawns_dict:
-            spawn = self.spawner.spawns_dict[spawn_id]
-            if not spawn.is_collision_trigger():
-                continue
-            # evaluate collisions with player
-            if self.player.intersects(spawn.get_bounding_box()):
-                player_collide_list.append(spawn_id)
-            
-            # evaluate collisions with sword
-            if self.dyrion != None and self.dyrion.intersects(spawn.get_bounding_box()):
-                tool_collide_list.append(spawn_id)
-
-            # evaluate collisions with homing gun 
-            if self.homing != None:
-                bullet_kill_list = []
-                projectile_spawner = self.homing.projectile_spawner
-                for bullet_id in projectile_spawner.spawns_dict:
-                    bullet = projectile_spawner.spawns_dict[bullet_id]
-                    if not bullet.is_collision_trigger():
-                        continue
-                    for spawn_id in self.spawner.spawns_dict:
-                        spawn = self.spawner.spawns_dict[spawn_id]
-                        if spawn.is_collision_trigger() and bullet.intersects(spawn.get_bounding_box()):
-                            if spawn_id not in tool_collide_list:
-                                tool_collide_list.append(spawn_id)
-                            bullet_kill_list.append(bullet_id)
-                if len(bullet_kill_list) > 0:
-                    projectile_spawner.remove_spawns(bullet_kill_list)
- 
-        # apply effects of tool collisions
-        for spawn_id in tool_collide_list:
-            spawn = self.spawner.spawns_dict[spawn_id]
-            s_pos = spawn.bounding_geometry.WorldTransform.value.get_translate()
-            self.destruction_spawner.spawn_destruction(
-                SPAWN_POS = s_pos,
-                SPAWN_SCALE = 0.05,
-                SPAWN_AMOUNT = random.randint(10,20),
-                VANISH_DISTANCE = 4.0
-            )
-
-        self.spawner.remove_spawns(tool_collide_list)
-
-        # apply effect of player collisions
-        player_collide_list = [spawn_id for spawn_id in player_collide_list if spawn_id not in tool_collide_list]
-        '''
-        for spawn_id in player_collide_list:
-            spawn = self.spawner.spawns_dict[spawn_id]
-            spawn.bounding_geometry.Material.value.set_uniform(
-                "Color",
-                avango.gua.Vec4(1.0,0.0,0.0,1.0)
-            )
-        '''
-        if len(player_collide_list) > 0:
-            self.player.subtract_life()
-            self.spawner.remove_spawns(player_collide_list)
-
-            if self.player.is_dead():
-                self._end_game(REASON='Player died.')
         

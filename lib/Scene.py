@@ -59,9 +59,11 @@ class Scene:
         self.glumb.node.Transform.value = avango.gua.make_trans_mat(0,0,-30) * \
             avango.gua.make_scale_mat(5,5,5)
 
+        '''
         self.text_test = Text()
         self.text_test.my_constructor(PARENT_NODE=PARENT_NODE, TEXT='FOO BAR BAZ.!?')
         self.text_test.node.Transform.value = avango.gua.make_trans_mat(0,0,-5)
+        '''
 
         '''
         ## init ground

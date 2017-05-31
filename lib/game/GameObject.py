@@ -45,6 +45,14 @@ class GameObject(avango.script.Script):
         if self.bounding_geometry != None:
             self.bounding_geometry.Parent.value.Children.value.remove(self.bounding_geometry)
 
+    def hide(self):
+        ''' hides this gameobject. '''
+        self.bounding_geometry.Tags.value = ['invisible']
+
+    def show(self):
+        ''' makes the geometry visible. '''
+        self.bounding_geometry.Tags.value = []
+
     def get_just_spawned(self):
         ''' getter for self._just_spawned. '''
         return self._just_spawned 
