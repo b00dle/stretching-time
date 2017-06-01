@@ -1,0 +1,14 @@
+# Blender MTL File: 'Hand_rig_by_up3d_de.blend'
+# Material Count: 1
+
+newmtl Hand_Material
+Ns 37.254902
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.640000
+Ks 0.100000 0.100000 0.100000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Ks /home/buda8714/Desktop/VR_lecture/scripts/stretching-time/data/objects/AppData/Local/Temp/Texturen/Texturen 2K/Hand Textur 2k_Spec_Map.jpg
+map_Kd /home/buda8714/Desktop/VR_lecture/scripts/stretching-time/data/objects/AppData/Local/Temp/Texturen/Texturen 2K/Hand Textur Diff 2k.jpg
+map_Bump /home/buda8714/Desktop/VR_lecture/scripts/stretching-time/data/objects/AppData/Local/Temp/Texturen/Texturen 2K/Hand Textur 2k Norm.jpg

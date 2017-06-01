@@ -41,6 +41,9 @@ def start():
     ## init field connections (dependency graph)
     print_graph(scenegraph.Root.value)
 
+    ## Start the game application
+    game.start_game()
+
     ## start application/render loop
     viewingSetup.run(locals(), globals())
 

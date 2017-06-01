@@ -12,6 +12,7 @@ from lib.game.player.Player import Player
 from lib.game.tool.SwordDyrion import SwordDyrion
 from lib.game.tool.PewPewGun import PewPewGun
 from lib.game.tool.HomingGun import HomingGun
+from lib.game.tool.Hand import Hand
 from lib.game.stage.GameStage import GameStage
 from lib.game.stage.PlayStage import PlayStage
 import lib.game.Globals
@@ -52,10 +53,19 @@ class Game(avango.script.Script):
         self.player = Player()
         self.player.my_constructor(PARENT_NODE = self.screen_node, OFFSET_MAT = p_offset)
         
+        # init hand tool
+        self.hand = Hand()
+        self.hand.my_constructor(
+            PARENT_NODE = self.player.node,
+            GEOMETRY_SIZE = 2.0,
+            TARGET_SPAWNER = self.spawner
+        )
+        self.hand.set_active(False)
+
         # init sword tool
         self.dyrion = SwordDyrion()
         self.dyrion.my_constructor(PARENT_NODE = self.player.node, GEOMETRY_SIZE = 0.5)
-        self.dyrion.hide()
+        self.dyrion.set_active(False)
         
         # init gun tool
         '''
@@ -77,7 +87,7 @@ class Game(avango.script.Script):
             TARGET_SPAWNER = self.spawner,
             GEOMETRY_SIZE = 0.3
         )
-        self.homing.hide()
+        self.homing.set_active(False)
         
         self.debug_stretch_factor = 2.0
 

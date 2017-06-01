@@ -56,10 +56,13 @@ class PlayStage(GameStage):
 
         # configure sword
         self._game.dyrion.sf_sword_mat.connect_from(self._game.pointer_input.pointer_node.Transform)
+        self._game.hand.sf_hand_mat.connect_from(self._game.pointer_input.pointer_node.Transform)
+        self._game.hand.sf_grab_trigger.connect_from(self._game.pointer_input.sf_button)
 
         # show all geometries which should be visible after this stage
-        self._game.dyrion.show()
-        self._game.homing.show()
+        #self._game.dyrion.set_active(True)
+        self._game.hand.set_active(True)
+        #self._game.homing.set_active(True)
 
     def stop(self):
         ''' overrides BC functionality. '''
@@ -79,11 +82,14 @@ class PlayStage(GameStage):
         self._game.homing.sf_gun_mat.disconnect_from(self._game.pointer_input.pointer_node.Transform)
         self._game.homing.sf_gun_trigger.disconnect_from(self._game.pointer_input.sf_button)
         # sword
-        self._game.dyrion.sf_sword_mat.connect_from(self._game.pointer_input.pointer_node.Transform)
-
+        self._game.dyrion.sf_sword_mat.disconnect_from(self._game.pointer_input.pointer_node.Transform)
+        # hand
+        self._game.hand.sf_hand_mat.disconnect_from(self._game.pointer_input.pointer_node.Transform)
+        self._game.hand.sf_grab_trigger.disconnect_from(self._game.pointer_input.sf_button)
         # hide all geometries which should be invisible after this stage
-        self._game.dyrion.hide()
-        self._game.homing.hide()
+        #self._game.dyrion.set_active(False)
+        self._game.hand.set_active(False)
+        #self._game.homing.set_active(False)
 
     def _calc_time_stretch(self):
         ''' calculates a global factor for all time based animations. '''
@@ -112,11 +118,11 @@ class PlayStage(GameStage):
                 player_collide_list.append(spawn_id)
             
             # evaluate collisions with sword
-            if self._game.dyrion != None and self._game.dyrion.intersects(spawn.get_bounding_box()):
+            if self._game.dyrion != None and self._game.dyrion.get_active() and self._game.dyrion.intersects(spawn.get_bounding_box()):
                 tool_collide_list.append(spawn_id)
 
             # evaluate collisions with homing gun 
-            if self._game.homing != None:
+            if self._game.homing != None and self._game.homing.get_active():
                 bullet_kill_list = []
                 projectile_spawner = self._game.homing.projectile_spawner
                 for bullet_id in projectile_spawner.spawns_dict:

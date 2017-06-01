@@ -2,11 +2,14 @@ import avango
 import avango.gua
 import avango.script
 
+from avango.script import field_has_changed
+
 class GameObject(avango.script.Script):
     ''' Defines base interface for all visualizable objects in the game. '''
 
     instance_count = 0
     sf_destroyed = avango.SFBool()
+    sf_active = avango.SFBool()
 
     def __init__(self):
         self.super(GameObject).__init__()
@@ -19,6 +22,9 @@ class GameObject(avango.script.Script):
         
         # stores a reference id to this instance
         self.game_object_id = GameObject.instance_count
+
+        # flag denotng whether this instance is active or not
+        self.sf_active.value = True
 
         GameObject.instance_count += 1
 
@@ -53,6 +59,21 @@ class GameObject(avango.script.Script):
         ''' makes the geometry visible. '''
         self.bounding_geometry.Tags.value = []
 
+    def set_active(self, ACTIVE):
+        self.sf_active.value = ACTIVE
+
+    def get_active(self):
+        return self.sf_active.value
+
+    def _on_active_changed(self):
+        if self.bounding_geometry == None:
+            return
+            
+        if self.get_active():
+            self.show()
+        else:
+            self.hide()
+
     def get_just_spawned(self):
         ''' getter for self._just_spawned. '''
         return self._just_spawned 
@@ -73,3 +94,8 @@ class GameObject(avango.script.Script):
 
     def get_num_game_objects(self):
         return GameObject.instance_count
+
+    @field_has_changed(sf_active)
+    def sf_active_changed(self):
+        self._on_active_changed()
+
