@@ -17,7 +17,7 @@ class Player(GameObject):
     def __init__(self):
         self.super(Player).__init__()
 
-    def my_constructor(self, PARENT_NODE=None, OFFSET_MAT=avango.gua.make_identity_mat(), MAX_LIFE_COUNT=3):
+    def my_constructor(self, PARENT_NODE=None, OFFSET_MAT=avango.gua.make_identity_mat(), MAX_LIFE_COUNT=1):
         # get trimesh loader to load external tri-meshes
         _loader = avango.gua.nodes.TriMeshLoader()
 

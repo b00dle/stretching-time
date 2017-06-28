@@ -3,6 +3,7 @@ import avango.gua
 import avango.script
 
 from avango.script import field_has_changed
+import time
 
 class GameObject(avango.script.Script):
     ''' Defines base interface for all visualizable objects in the game. '''
@@ -36,6 +37,9 @@ class GameObject(avango.script.Script):
         # flag stating whether this instance can trigger collision
         self.can_trigger_collision = True
 
+        # stores creation time
+        self._creation_time = time.time()
+
         self.always_evaluate(True)
 
     def evaluate(self):
@@ -64,6 +68,9 @@ class GameObject(avango.script.Script):
 
     def get_active(self):
         return self.sf_active.value
+
+    def get_creation_time(self):
+        return self._creation_time
 
     def _on_active_changed(self):
         if self.bounding_geometry == None:

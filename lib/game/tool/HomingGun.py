@@ -207,5 +207,5 @@ class HomingGun(GameObject):
 
     @field_has_changed(sf_gun_trigger)
     def sf_gun_trigger_changed(self):
-        if self.sf_gun_trigger.value:
+        if self.sf_gun_trigger.value and self.get_active():
             self.shoot()

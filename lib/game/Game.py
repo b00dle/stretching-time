@@ -8,13 +8,16 @@ from avango.script import field_has_changed
 
 from lib.game.controller.Spawner import Spawner
 from lib.game.controller.DestructionSpawner import DestructionSpawner
+from lib.game.controller.ToolSpawner import ToolSpawner
 from lib.game.player.Player import Player
 from lib.game.tool.SwordDyrion import SwordDyrion
 from lib.game.tool.PewPewGun import PewPewGun
 from lib.game.tool.HomingGun import HomingGun
 from lib.game.tool.Hand import Hand
-from lib.game.stage.GameStage import GameStage
+from lib.game.stage.IntroStage import IntroStage
 from lib.game.stage.PlayStage import PlayStage
+from lib.game.stage.EndStage import EndStage
+from lib.game.misc.Text import Text
 import lib.game.Globals
 
 class Game(avango.script.Script):
@@ -31,7 +34,7 @@ class Game(avango.script.Script):
         self.pointer_input = POINTER_INPUT
         self.pointer_input.showDebugGeometry(False)
 
-        self._game_over = False
+        self.game_over = False
 
         self.head_pos_buffer = []
         self.velocity_norm = 0.005 # experimentally set 
@@ -48,6 +51,14 @@ class Game(avango.script.Script):
             AUTO_SPAWN = False
         )
         
+        # init tool spawner
+        self.tool_spawner = ToolSpawner()
+        self.tool_spawner.my_constructor(
+            PARENT_NODE = self.scenegraph.Root.value,
+            VANISH_TIME = 3.0,
+            AUTO_SPAWN = False
+        )
+
         # init player
         p_offset = avango.gua.make_trans_mat(0,0,0.0) * avango.gua.make_scale_mat(0.1,0.1,0.1)
         self.player = Player()
@@ -91,17 +102,25 @@ class Game(avango.script.Script):
         
         self.debug_stretch_factor = 2.0
 
-        self.current_stage = PlayStage()
-        self.current_stage.my_constructor(GAME=self)
-        
+        # list of sequencial stages
+        self._stages = [IntroStage(), PlayStage(), EndStage()]
+        for stage in self._stages:
+            stage.my_constructor(GAME=self)
+        self._current_stage = 0
+
+        # init text at center of screen
+        self.center_text = Text()
+        self.center_text.my_constructor(PARENT_NODE=self.scenegraph.Root.value, TEXT='', SCALE=0.1)
+        self.center_text.node.Transform.value = avango.gua.make_trans_mat(0,0,-5)
+
         self.always_evaluate(True)
 
     def evaluate(self):
         ''' Frame base evaluation function to update game logic. '''
         self._move_player()
-        if not self._game_over and self.current_stage.is_running():
-            self.current_stage.evaluate_stage()
-
+        if self._stages[self._current_stage].is_running():
+            self._stages[self._current_stage].evaluate_stage()
+        
     def _move_player(self):
         ''' Moves player by offset between this and last frame's head position. '''
         head_m = self.head_node.WorldTransform.value
@@ -111,8 +130,18 @@ class Game(avango.script.Script):
 
     def start_game(self):
         print("game started.")
-        self._game_over = False
-        self.current_stage.start()
+        self.start_stage(0)
+
+    def start_stage(self, INDEX):
+        print("starting stage", str(INDEX % len(self._stages)))
+        self._stages[self._current_stage].stop()
+        self._current_stage = INDEX % len(self._stages)
+        if self._current_stage == 0:
+            self.game_over = False
+        self._stages[self._current_stage].start()
+
+    def next_stage(self):
+        self.start_stage(self._current_stage+1)
 
     def end_game(self, REASON='Player died.'):
         ''' function called when game is over. REASON should specify how the game ended. '''
@@ -121,7 +150,7 @@ class Game(avango.script.Script):
             "Color",
             avango.gua.Vec4(1.0,0.0,0.0,1.0)
         )
-        self._game_over = True
-        self.current_stage.stop()
+        self.game_over = True
+        self.start_stage(len(self._stages)-1)
         # TODO perform cleanup
         

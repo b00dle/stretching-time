@@ -32,21 +32,20 @@ class PlayStage(GameStage):
         
         self.super(PlayStage).start()
         
-        # add all lifes for player
-        while self._game.player.add_life():
-            pass
-        self._game.player.bounding_geometry.Material.value.set_uniform(
-            "Color",
-            avango.gua.Vec4(0.0,1.0,0.0,1.0)
-        )
-
-        # configure spawner
+        # configure enemy spawner
         self._game.spawner.auto_spawn = True
         self._game.spawner.auto_spawn_min_pos = avango.gua.Vec3(-1.5, 1.0, -70)
         self._game.spawner.auto_spawn_max_pos = avango.gua.Vec3(1.5, -1.0, -70)
         self._game.spawner.max_auto_spawns = 10
         self._game.spawner.spawn_scale = 0.3
         self._game.spawner.spawn_pickable = True
+
+        # configure tool spawner
+        self._game.tool_spawner.auto_spawn = True
+        self._game.tool_spawner.auto_spawn_min_pos = avango.gua.Vec3(-1.3, 0.8, 0)
+        self._game.tool_spawner.auto_spawn_max_pos = avango.gua.Vec3(1.3, -0.8, 0)
+        self._game.tool_spawner.spawn_scale = 0.3
+        self._game.tool_spawner.spawn_interval = [0.0, 3.0]
 
         # configure homing gun
         self._game.homing.sf_gun_mat.connect_from(self._game.pointer_input.pointer_node.Transform)
@@ -76,6 +75,12 @@ class PlayStage(GameStage):
         # delete all existing spawns
         kill_list = [key for key in self._game.spawner.spawns_dict.keys()]
         self._game.spawner.remove_spawns(kill_list)
+
+        # release auto spawn (stop spawning tools)
+        self._game.tool_spawner.auto_spawn = False
+        # delete all existing spawns
+        kill_list = [key for key in self._game.tool_spawner.spawns_dict.keys()]
+        self._game.tool_spawner.remove_spawns(kill_list)
 
         ## disconnect connected tool fields
         # homing gun
@@ -153,14 +158,6 @@ class PlayStage(GameStage):
 
         # apply effect of player collisions
         player_collide_list = [spawn_id for spawn_id in player_collide_list if spawn_id not in tool_collide_list]
-        '''
-        for spawn_id in player_collide_list:
-            spawn = self._game.spawner.spawns_dict[spawn_id]
-            spawn.bounding_geometry.Material.value.set_uniform(
-                "Color",
-                avango.gua.Vec4(1.0,0.0,0.0,1.0)
-            )
-        '''
         if len(player_collide_list) > 0:
             self._game.player.subtract_life()
             self._game.spawner.remove_spawns(player_collide_list)
