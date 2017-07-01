@@ -96,6 +96,6 @@ class Hand(GameObject):
     def sf_grab_trigger_changed(self):
         if self.sf_grab_trigger.value:
             self.grab()
-            self.set_active(False)
+            #self.set_active(False)
         else:
-            self.set_active(True)
+            pass#self.set_active(True)

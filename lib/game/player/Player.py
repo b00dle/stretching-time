@@ -8,6 +8,7 @@ import lib.game.Globals
 import time
 
 from lib.game.misc.Heart import Heart
+from lib.game.misc.Ammo import Ammo
 
 class Player(GameObject):
     ''' Defines game logicfor the player '''
@@ -42,6 +43,8 @@ class Player(GameObject):
             h.node.Transform.value = avango.gua.make_trans_mat(-0.1+i*x_step, 0.15, 0) * \
                 avango.gua.make_scale_mat(0.03,0.03,0.03)
             self._life_list.append(h)
+
+        self._ammo_list = []
 
         # create geometry
         self.bounding_geometry = _loader.create_geometry_from_file(
@@ -78,6 +81,31 @@ class Player(GameObject):
                 h.set_dead(False)
                 return True
         return False
+
+    def add_ammo(self, COUNT=1):
+        for i in range(len(self._ammo_list), len(self._ammo_list)+COUNT):
+            a = Ammo()
+            a.my_constructor(PARENT_NODE=self.node, NAME="ammo_"+str(i))
+            x_step = 0.07
+            a.node.Transform.value = avango.gua.make_trans_mat(-0.1+i*x_step, -0.15, 0) * \
+                avango.gua.make_scale_mat(0.03,0.03,0.03)
+            self._ammo_list.append(a)
+
+    def subtract_ammo(self):
+        ''' subtracts a pice of ammo from the player.
+            Returns False if player has no more ammo to subtract.
+            True otheriwse. '''
+        if len(self._ammo_list) == 0:
+            return False
+        a = self._ammo_list[-1]
+        a.node.Parent.value.Children.value.remove(a.node)
+        self._ammo_list.remove(a)
+        del a
+        a = None
+        return True
+
+    def get_ammo(self):
+        return len(self._ammo_list)
 
     def is_dead(self):
         ''' Returns True if all lives of the player have been used. '''

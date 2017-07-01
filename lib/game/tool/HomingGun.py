@@ -41,6 +41,10 @@ class HomingGun(GameObject):
         # geometry for visualizing picked object
         self.selection_geometry = None
 
+        self.use_count = 0
+
+        self.max_use = 3
+
         self.always_evaluate(True)
 
     def evaluate(self):
@@ -83,6 +87,9 @@ class HomingGun(GameObject):
         sf_gun_trigger.disconnect()
 
         self.super(SwordDyrion).cleanup()
+
+    def is_used_up(self):
+        return self.use_count >= self.max_use
 
     def my_constructor(self,
                        PARENT_NODE,
@@ -195,6 +202,8 @@ class HomingGun(GameObject):
                 SPAWN_OBJ = projectile,
                 AUTO_ROTATE = False
             )
+
+            self.use_count += 1
 
     @field_has_changed(sf_gun_mat)
     def sf_sword_mat_changed(self):

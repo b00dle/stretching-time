@@ -75,7 +75,7 @@ def init_advanced_viewing_setup(SCENEGRAPH):
         TRACKING_TRANSMITTER_OFFSET = _tracking_transmitter_offset,
         )
 
-  elif hostname == "athena": # small powerwall workstation
+  elif hostname == "athena" or hostname == "arachne": # small powerwall workstation
     _tracking_transmitter_offset = avango.gua.make_trans_mat(0.0,-1.42,1.6) # transformation into tracking coordinate system
 
     viewingSetup = StereoViewingSetup(
@@ -120,7 +120,7 @@ def init_input_setup(VIEWING_SETUP, SCENEGRAPH):
   hostname = hostname.strip(" \n")
 
   pointerInput = None
-  if hostname == "athena": # small powerwall workstation
+  if hostname == "athena" or hostname == "arachne": # small powerwall workstation
     _tracking_transmitter_offset = avango.gua.make_trans_mat(0.05,-1.43,1.6) # transformation into tracking coordinate system
 
     pointerInput = PointerInput()

@@ -6,9 +6,10 @@ import avango.gua
 import avango.script
 from avango.script import field_has_changed
 
-from lib.game.controller.Spawner import Spawner
+from lib.game.controller.EnemySpawner import EnemySpawner
 from lib.game.controller.DestructionSpawner import DestructionSpawner
 from lib.game.controller.ToolSpawner import ToolSpawner
+from lib.game.controller.PowerUpSpawner import PowerUpSpawner
 from lib.game.player.Player import Player
 from lib.game.tool.SwordDyrion import SwordDyrion
 from lib.game.tool.PewPewGun import PewPewGun
@@ -35,6 +36,7 @@ class Game(avango.script.Script):
         self.pointer_input.showDebugGeometry(False)
 
         self.game_over = False
+        self._game_score = 0
 
         self.head_pos_buffer = []
         self.velocity_norm = 0.005 # experimentally set 
@@ -44,32 +46,44 @@ class Game(avango.script.Script):
         self.destruction_spawner.my_constructor(PARENT_NODE = self.scenegraph.Root.value)
 
         # init spawner
-        self.spawner = Spawner()
+        self.spawner = EnemySpawner()
         self.spawner.my_constructor(
             PARENT_NODE = self.scenegraph.Root.value,
-            Z_VANISH = 2,
-            AUTO_SPAWN = False
+            AUTO_SPAWN = False,
+            Z_VANISH = 2
         )
         
         # init tool spawner
         self.tool_spawner = ToolSpawner()
         self.tool_spawner.my_constructor(
             PARENT_NODE = self.scenegraph.Root.value,
-            VANISH_TIME = 3.0,
-            AUTO_SPAWN = False
+            AUTO_SPAWN = False,
+            VANISH_TIME = 3.0
+        )
+
+        # power up spawner
+        self.powerup_spawner = PowerUpSpawner()
+        self.powerup_spawner.my_constructor(
+            PARENT_NODE = self.scenegraph.Root.value,
+            AUTO_SPAWN = False,
+            Z_VANISH = 2
         )
 
         # init player
         p_offset = avango.gua.make_trans_mat(0,0,0.0) * avango.gua.make_scale_mat(0.1,0.1,0.1)
         self.player = Player()
-        self.player.my_constructor(PARENT_NODE = self.screen_node, OFFSET_MAT = p_offset)
+        self.player.my_constructor(
+            PARENT_NODE = self.screen_node,
+            OFFSET_MAT = p_offset,
+            MAX_LIFE_COUNT=3
+        )
         
         # init hand tool
         self.hand = Hand()
         self.hand.my_constructor(
             PARENT_NODE = self.player.node,
             GEOMETRY_SIZE = 2.0,
-            TARGET_SPAWNER = self.spawner
+            TARGET_SPAWNER = self.tool_spawner
         )
         self.hand.set_active(False)
 
@@ -79,16 +93,13 @@ class Game(avango.script.Script):
         self.dyrion.set_active(False)
         
         # init gun tool
-        '''
         self.pewpew = PewPewGun()
         self.pewpew.my_constructor(
             PARENT_NODE = self.player.node,
             SPAWN_PARENT = self.scenegraph.Root.value,
             GEOMETRY_SIZE = 0.3
         )
-        self.pewpew.sf_gun_mat.connect_from(self.pointer_input.pointer_node.Transform)
-        self.pewpew.sf_gun_trigger.connect_from(self.pointer_input.sf_button)
-        '''
+        self.pewpew.set_active(False)
 
         # init homing gun tool
         self.homing = HomingGun()
@@ -113,6 +124,11 @@ class Game(avango.script.Script):
         self.center_text.my_constructor(PARENT_NODE=self.scenegraph.Root.value, TEXT='', SCALE=0.1)
         self.center_text.node.Transform.value = avango.gua.make_trans_mat(0,0,-5)
 
+        # init score text in upper right of screen
+        self.score_text = Text()
+        self.score_text.my_constructor(PARENT_NODE=self.screen_node, TEXT='0', SCALE=0.05)
+        self.score_text.node.Transform.value = avango.gua.make_trans_mat(1.1,0.8,0) 
+
         self.always_evaluate(True)
 
     def evaluate(self):
@@ -128,6 +144,16 @@ class Game(avango.script.Script):
         pos.z = 0.0
         self.player.set_transform(pos)
 
+    def set_game_score(self, SCORE):
+        self._game_score = SCORE
+        self.score_text.set_text(str(self._game_score))
+
+    def add_game_score(self, VALUE):
+        self.set_game_score(self._game_score+int(VALUE))
+
+    def get_game_score(self):
+        return self._game_score
+
     def start_game(self):
         print("game started.")
         self.start_stage(0)
@@ -138,6 +164,8 @@ class Game(avango.script.Script):
         self._current_stage = INDEX % len(self._stages)
         if self._current_stage == 0:
             self.game_over = False
+            self.spawner.removed_spawns = 0
+            self.set_game_score(0)
         self._stages[self._current_stage].start()
 
     def next_stage(self):

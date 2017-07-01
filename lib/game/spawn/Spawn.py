@@ -14,3 +14,5 @@ class Spawn(MovingObject):
         self.super(Spawn).__init__()
 
         self.pickable = False
+
+        self.flags = []

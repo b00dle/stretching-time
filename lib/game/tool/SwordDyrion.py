@@ -20,6 +20,10 @@ class SwordDyrion(GameObject):
         
         self.always_evaluate(False)
 
+        self.use_count = 0
+
+        self.max_use = 5
+
     def evaluate(self):
         pass
 
@@ -31,6 +35,9 @@ class SwordDyrion(GameObject):
         sf_sword_mat.disconnect()
 
         self.super(SwordDyrion).cleanup()
+
+    def is_used_up(self):
+        return self.use_count >= self.max_use
 
     def my_constructor(self,
                        PARENT_NODE = None,

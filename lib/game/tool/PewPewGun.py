@@ -9,6 +9,8 @@ from avango.script import field_has_changed
 from lib.game.GameObject import GameObject
 from lib.game.controller.RadialSpawner import RadialSpawner
 
+import math
+
 class PewPewGun(GameObject):
     ''' a little support dude that fights for justice and survival. '''
 
@@ -21,6 +23,10 @@ class PewPewGun(GameObject):
         self._offset_mat = avango.gua.make_identity_mat()
         
         self.always_evaluate(False)
+
+        self.use_count = 0
+
+        self.max_use = 10
 
     def evaluate(self):
         pass
@@ -37,6 +43,9 @@ class PewPewGun(GameObject):
 
         self.super(SwordDyrion).cleanup()
 
+    def is_used_up(self):
+        return self.use_count >= self.max_use
+
     def my_constructor(self,
                        PARENT_NODE,
                        SPAWN_PARENT,
@@ -49,12 +58,12 @@ class PewPewGun(GameObject):
         # create geometry
         self.bounding_geometry = _loader.create_geometry_from_file(
             "pewpew_geometry_GOID_"+str(self.game_object_id),
-            "data/objects/plunger_op.obj",
-            avango.gua.LoaderFlags.DEFAULTS
+            "data/objects/ray_gun/ray_gun.obj",
+            avango.gua.LoaderFlags.DEFAULTS | avango.gua.LoaderFlags.LOAD_MATERIALS
         )
         self.bounding_geometry.Transform.value = self._offset_mat
         self.bounding_geometry.Tags.value = ["invisible"]
-
+        
         self._barrel_exit_node = avango.gua.nodes.TransformNode(
             Name = "pewpew_barrel_exit_GOID_"+str(self.game_object_id)
         )
@@ -65,7 +74,7 @@ class PewPewGun(GameObject):
         PARENT_NODE.Children.value.append(self.bounding_geometry)
 
         self.projectile_spawner = RadialSpawner()
-        self.projectile_spawner.spawn_scale = 0.05
+        self.projectile_spawner.spawn_scale = 0.15
         self.projectile_spawner.my_constructor(
             PARENT_NODE = SPAWN_PARENT,
             VANISH_DISTANCE = 10.0
@@ -82,11 +91,25 @@ class PewPewGun(GameObject):
         exit_pos = self._barrel_exit_node.WorldTransform.value.get_translate()
         movement_dir = exit_pos - spawn_pos
         movement_dir.normalize()
+        
+        # calculate to target rotation
+        forward = avango.gua.Vec3(0,0,-1)
+        axis = forward.cross(movement_dir)
+        axis.normalize()
+        angle = math.degrees(math.acos(movement_dir.dot(forward)))
+        rot_mat = avango.gua.make_rot_mat(angle, axis.x, axis.y, axis.z)
+        spawn_transform = avango.gua.make_trans_mat(spawn_pos) * \
+            rot_mat
+
         self.projectile_spawner.spawn(
             SPAWN_POS = spawn_pos,
             MOVEMENT_SPEED = 0.1,
-            MOVEMENT_DIR = movement_dir
+            MOVEMENT_DIR = movement_dir,
+            SPAWN_TYPE = 4,
+            AUTO_ROTATE = False,
+            SPAWN_TRANSFORM = spawn_transform
         )
+        self.use_count += 1
 
     @field_has_changed(sf_gun_mat)
     def sf_sword_mat_changed(self):
@@ -99,5 +122,5 @@ class PewPewGun(GameObject):
 
     @field_has_changed(sf_gun_trigger)
     def sf_gun_trigger_changed(self):
-        if self.sf_gun_trigger.value:
+        if self.sf_gun_trigger.value and self.get_active():
             self.shoot()

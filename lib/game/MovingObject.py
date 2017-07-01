@@ -72,9 +72,12 @@ class MovingObject(GameObject):
         t = self.bounding_geometry.Transform.value.get_translate()
         r = self.bounding_geometry.Transform.value.get_rotate()
         self.bounding_geometry.Transform.value = avango.gua.make_trans_mat(t.x, t.y, t.z) * \
-            avango.gua.make_rot_mat(r) * \
-            avango.gua.make_scale_mat(SCALE, SCALE, SCALE)
+            avango.gua.make_scale_mat(SCALE, SCALE, SCALE) * \
+            avango.gua.make_rot_mat(r)
 
+    def get_scale(self):
+        ''' returns the scale component of the boudning_geometries Transform property. '''
+        return self.bounding_geometry.Transform.value.get_scale()
 
     def _get_fps_scale(self):
         ''' returns a scale factor based on time elapsed since last frame. '''

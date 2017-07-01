@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 # import guacamole libraries
 import avango
 import avango.gua
@@ -8,10 +7,10 @@ from avango.script import field_has_changed
 import random
 import time
 
-from lib.game.spawn.HomingGun import HomingGun
-from lib.game.spawn.SwordDyrion import SwordDyrion
+from lib.game.controller.Spawner import Spawner
+from lib.game.spawn.Coin import Coin
 
-class ToolSpawner(avango.script.Script):
+class ToolSpawner(Spawner):
 	''' Manages creation of spawn objects and power ups collectable.
 		Also observes position of spawn. If spawn exceeds max bounds,
 		it will be removed by the spawner. '''
@@ -19,21 +18,9 @@ class ToolSpawner(avango.script.Script):
 	def __init__(self):
 		self.super(ToolSpawner).__init__()
 
-		# uniform scale factor for spawned objects
-		self.spawn_scale = 1.0
-
-		# list of all objects spawned by this instance
-		self.spawns_dict = {}
-
-		# parent node for all spawned objects
-		self.spawn_root = None
-
 		# vanishing position for spawned objects
 		# objects exceeding this plane will be deleted by spawner
 		self.vanish_time = 4.0
-
-		# flag determining whether automatic spawning should be enabled
-		self.auto_spawn = True
 
 		# automatically spawns within given interval
 		# unit is seconds
@@ -43,48 +30,14 @@ class ToolSpawner(avango.script.Script):
 		# if number is negative no autospawn will be performed
 		self.spawn_at = -1.0
 
-		# flag for enabling/disabling spawning of pickable objects
-		self.spawn_pickable = False
-
-		# number of maximum spawns
-		# only used if auto spawn enabled
 		self.max_auto_spawns = 1
 
-		# bounds set for random spawning
-		# only used if auto spawn enabled
-		self.auto_spawn_min_pos = avango.gua.Vec3()
-		self.auto_spawn_max_pos = avango.gua.Vec3()
-
-		# enable frame based update
-		self.always_evaluate(True)
-
-	def my_constructor(self, PARENT_NODE = None, VANISH_TIME = 3.0, AUTO_SPAWN = True):
-		# create root node for object spawning
-		self.spawn_root = avango.gua.nodes.TransformNode(Name = "spawn_root")
-		self.spawn_root.Transform.value = avango.gua.make_scale_mat(
-			self.spawn_scale,
-			self.spawn_scale,
-			self.spawn_scale
-		)
-		PARENT_NODE.Children.value.append(self.spawn_root)
+	def my_constructor(self, PARENT_NODE = None, AUTO_SPAWN = True, VANISH_TIME = 3.0):
+		self.super(ToolSpawner).my_constructor(PARENT_NODE, AUTO_SPAWN)
 
 		# set members from parameters
 		self.vanish_time = VANISH_TIME
 		self.auto_spawn = AUTO_SPAWN
-
-	def evaluate(self):
-		''' frame based update function. '''
-		if len(self.spawns_dict) > 0:
-			self._remove_vanished()
-		if self.auto_spawn:
-			self._auto_spawn()
-
-	def cleanup(self):
-		''' cleans up pending connections into the application, so that object can be deleted. '''
-		self.clear()
-		if self.spawn_root != None:
-			self.spawn_root.Parent.value.Children.value.remove(self.spawn_root)
-		self.always_evaluate(False) 
 
 	def _remove_vanished(self):
 		''' Removes objects timed out by spawner. '''
@@ -106,7 +59,7 @@ class ToolSpawner(avango.script.Script):
 			if self.spawn_at < 0.0:
 				self.spawn_at = time.time() + random.uniform(self.spawn_interval[0], self.spawn_interval[1])
 			elif current_time > self.spawn_at:
-				_spawn_type = random.randint(0,1)
+				_spawn_type = random.randint(0,2)
 				self.spawn(self.auto_spawn_min_pos, self.auto_spawn_max_pos, _spawn_type)
 
 	def spawn(self, SPAWN_MIN = avango.gua.Vec3(), SPAWN_MAX = avango.gua.Vec3(), SPAWN_TYPE = 1):
@@ -119,51 +72,29 @@ class ToolSpawner(avango.script.Script):
 
 		m = avango.gua.make_trans_mat(x, y, z)
 
-		spawn = None
-		if SPAWN_TYPE == 0:
-			spawn = HomingGun()
-		else:
-			spawn = SwordDyrion()
+		spawn = Coin()
 
 		spawn.pickable = self.spawn_pickable
-		spawn.my_constructor(PARENT_NODE = self.spawn_root, SPAWN_TRANSFORM = m)
+		if SPAWN_TYPE == 0:
+			tex = 'data/textures/sword_psych_stroke.png'
+			spawn.flags.append('sword')
+		elif SPAWN_TYPE == 1:
+			tex = 'data/textures/missile_psych_stroke.png'
+			spawn.flags.append('homing')
+		elif SPAWN_TYPE == 2:
+			tex = 'data/textures/pewpew_coin.png'
+			spawn.flags.append('pewpew')
+		spawn.my_constructor(
+			PARENT_NODE = self.spawn_root,
+			SPAWN_TRANSFORM = m,
+			TEXTURE_PATH = tex
+		)
 		spawn.movement_speed = 0.0
-		spawn.rotation_speed = random.uniform(0.5,5.0)
-		spawn.rotation_axis.x = random.uniform(0.0,1.0)
-		spawn.rotation_axis.y = random.uniform(0.0,1.0)
-		spawn.rotation_axis.z = random.uniform(0.0,1.0)
+		spawn.rotation_speed = 2.0
+		spawn.rotation_axis.x = 0.0
+		spawn.rotation_axis.y = 1.0
+		spawn.rotation_axis.z = 0.0
 		spawn.rotation_axis.normalize()
 		spawn.setScale(self.spawn_scale)
 
 		self.spawns_dict[spawn.game_object_id] = spawn
-
-	def clear(self):
-		''' Removes all spawned objects, spawned by this instance. '''
-		self.remove_spawns(spawns_dict.keys())
-
-	def remove_spawn(self, SPAWN_ID):
-		''' Removes an object spawned by this instance. 
-			Returns success of removal. TODO fix memory leak'''
-		if SPAWN_ID in self.spawns_dict:
-			spawn = self.spawns_dict[SPAWN_ID]
-			spawn.cleanup()
-			self.spawns_dict.pop(SPAWN_ID, spawn)
-			del spawn
-			return True
-		print("FAILURE: Spawn not found (id:", SPAWN_ID, ")")
-		return False
-
-	def remove_spawns(self, SPAWNS_IDS):
-		''' Removes all objects listed in SPAWNS from the list of spawned objects. 
-			Returns True if all list elements where removed successfully. '''
-		if len(SPAWNS_IDS) == 0:
-			return True
-		success = True
-		for spawn_id in SPAWNS_IDS:
-			if not self.remove_spawn(spawn_id):
-				success = False
-		return success
-
-	def spawn_count(self):
-		''' returns total number of objects spawned by this instance. '''
-		return len(self.spawns_dict)

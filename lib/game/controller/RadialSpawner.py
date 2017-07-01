@@ -11,6 +11,7 @@ from lib.game.spawn.Monkey import Monkey
 from lib.game.spawn.Sphere import Sphere
 from lib.game.spawn.Box import Box
 from lib.game.spawn.Cupcake import Cupcake
+from lib.game.spawn.Plunger import Plunger
 
 class RadialSpawner(avango.script.Script):
 	''' Manages creation of spawned objects. Vanishing by distances to spawn root evaluation. '''
@@ -69,7 +70,7 @@ class RadialSpawner(avango.script.Script):
 				s = kill_list[0]
 				kill_list.pop(0)
 			
-	def spawn(self, SPAWN_POS, MOVEMENT_SPEED, MOVEMENT_DIR, SPAWN_TYPE=3, SPAWN_OBJ=None, AUTO_ROTATE=True):
+	def spawn(self, SPAWN_POS, MOVEMENT_SPEED, MOVEMENT_DIR, SPAWN_TYPE=3, SPAWN_OBJ=None, AUTO_ROTATE=True, SPAWN_TRANSFORM=None):
 		''' Spawns random spawn at random location. '''
 		spawn = SPAWN_OBJ
 		if spawn == None:
@@ -79,12 +80,21 @@ class RadialSpawner(avango.script.Script):
 				spawn = Sphere()
 			elif SPAWN_TYPE == 2:
 				spawn = Box()
-			else:
+			elif SPAWN_TYPE == 3:
 				spawn = Cupcake()
-			spawn.my_constructor(
-				PARENT_NODE = self.spawn_root,
-				SPAWN_TRANSFORM = avango.gua.make_trans_mat(SPAWN_POS)
-			)
+			else:
+				spawn = Plunger()
+
+			if SPAWN_TRANSFORM == None:
+				spawn.my_constructor(
+					PARENT_NODE = self.spawn_root,
+					SPAWN_TRANSFORM = avango.gua.make_trans_mat(SPAWN_POS)
+				)
+			else:
+				spawn.my_constructor(
+					PARENT_NODE = self.spawn_root,
+					SPAWN_TRANSFORM = SPAWN_TRANSFORM
+				)
 
 		spawn.movement_speed = MOVEMENT_SPEED
 		spawn.movement_dir = MOVEMENT_DIR
