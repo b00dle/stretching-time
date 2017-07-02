@@ -33,3 +33,6 @@ class Box(Spawn):
 
         # append to parent
         PARENT_NODE.Children.value.append(self.bounding_geometry)
+
+        # call parent my_constructor
+        self.super(Box).my_constructor()

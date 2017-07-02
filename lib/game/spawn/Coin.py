@@ -47,6 +47,9 @@ class Coin(Spawn):
         # append to parent
         PARENT_NODE.Children.value.append(self.bounding_geometry)
 
+        # call parent my_constructor
+        self.super(Coin).my_constructor()
+
     def set_texture(self, TEXTURE_PATH):
         self.bounding_geometry.Material.value.set_uniform('ColorMap', TEXTURE_PATH)
         self._primary_texture = TEXTURE_PATH

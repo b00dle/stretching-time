@@ -21,6 +21,7 @@ from lib.game.stage.PlayStage import PlayStage
 from lib.game.stage.EndStage import EndStage
 from lib.game.misc.Text import Text
 from lib.game.spawn.Coin import Coin
+from lib.game.score_board.JsonScoreParser import JsonScoreParser
 import lib.game.Globals
 
 class Game(avango.script.Script):
@@ -123,16 +124,21 @@ class Game(avango.script.Script):
         
         self.debug_stretch_factor = 2.0
 
+        # score board initialization
+        self._score_board = JsonScoreParser('data/scores/scores.json')
+        self._score_board.load()
+
         # list of sequencial stages
         self._stages = [IntroStage(), PlayStage(), EndStage()]
         for stage in self._stages:
             stage.my_constructor(GAME=self)
         self._current_stage = 0
 
-        # init text at center of screen
-        self.center_text = Text()
-        self.center_text.my_constructor(PARENT_NODE=self.scenegraph.Root.value, TEXT='', SCALE=0.1)
-        self.center_text.node.Transform.value = avango.gua.make_trans_mat(0,0,-5)
+        self.center_text_lines = [Text() for i in range(0,20)]
+        y_step = 1.6 / float(len(self.center_text_lines)) 
+        for i in range(0, len(self.center_text_lines)):
+            self.center_text_lines[i].my_constructor(PARENT_NODE=self.screen_node, TEXT='', SCALE=0.03)
+            self.center_text_lines[i].node.Transform.value = avango.gua.make_trans_mat(0,0.8 - i*y_step,0)
 
         # init score text in upper right of screen
         self.score_text = Text()
@@ -163,6 +169,24 @@ class Game(avango.script.Script):
 
         self.always_evaluate(True)
 
+    def write_text(self, LINES, FIRST_LINE=0):
+        self.clear_center_text()
+        for i in range(len(LINES)):
+            if i+FIRST_LINE >= len(self.center_text_lines):
+                return
+            self.center_text_lines[i+FIRST_LINE].set_text(LINES[i])
+
+    def clear_center_text(self):
+        for t in self.center_text_lines:
+            t.clear()
+
+    def save_score(self):
+        self._score_board.insert_score(self.player.name, self.get_game_score())
+        self._score_board.write()
+
+    def get_top_scores(self, COUNT):
+        return self._score_board.get_top_scores(COUNT)
+
     def evaluate(self):
         ''' Frame base evaluation function to update game logic. '''
         self._move_player()
@@ -176,6 +200,12 @@ class Game(avango.script.Script):
         pos.z = 0.0
         self.player.set_transform(pos)
 
+    def set_player_name(self, NAME):
+        self.player.name = NAME
+
+    def get_player_name(self):
+        return self.player.name
+
     def set_game_score(self, SCORE):
         self._game_score = SCORE
         self.score_text.set_text(str(self._game_score))
@@ -187,11 +217,9 @@ class Game(avango.script.Script):
         return self._game_score
 
     def start_game(self):
-        print("game started.")
         self.start_stage(0)
 
     def start_stage(self, INDEX):
-        print("starting stage", str(INDEX % len(self._stages)))
         self._stages[self._current_stage].stop()
         self._current_stage = INDEX % len(self._stages)
         if self._current_stage == 0:
@@ -205,7 +233,6 @@ class Game(avango.script.Script):
 
     def end_game(self, REASON='Player died.'):
         ''' function called when game is over. REASON should specify how the game ended. '''
-        print("game over.")
         self.player.bounding_geometry.Material.value.set_uniform(
             "Color",
             avango.gua.Vec4(1.0,0.0,0.0,1.0)

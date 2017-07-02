@@ -35,3 +35,6 @@ class Plunger(Spawn):
 
         # append to parent
         PARENT_NODE.Children.value.append(self.bounding_geometry)
+
+        # call parent my_constructor
+        self.super(Plunger).my_constructor()

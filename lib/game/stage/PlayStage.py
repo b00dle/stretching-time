@@ -34,6 +34,8 @@ class PlayStage(GameStage):
         }
         self._last_frame_time = time.time()
 
+        self.block_score = False
+
     def my_constructor(self, GAME):
         self.super(PlayStage).my_constructor(GAME)
 
@@ -60,6 +62,8 @@ class PlayStage(GameStage):
         
         self.super(PlayStage).start()
         
+        self.block_score = False
+
         self.removed_cupcakes = 0
 
         # configure enemy spawner
@@ -100,7 +104,7 @@ class PlayStage(GameStage):
         # configure homing gun
         self._game.homing.sf_gun_mat.connect_from(self._game.pointer_input.pointer_node.Transform)
         self._game.homing.sf_gun_trigger.connect_from(self._game.pointer_input.sf_button)
-        self._game.homing.pick_length = 50.0
+        self._game.homing.pick_length = 35.0
         self._game.homing.pick_angle_tolerance = 15.0
 
         # configure pew pew gun
@@ -124,6 +128,8 @@ class PlayStage(GameStage):
             return
 
         self.super(PlayStage).stop()
+
+        self.block_score = True
 
         # release auto spawn (stop spawning enemies)
         self._game.spawner.auto_spawn = False
@@ -471,7 +477,7 @@ class PlayStage(GameStage):
             and what the default point score will be. 
             All default scores will be factored with the current lib.game.Globals.TIME_FACTOR.
             COUNT specifies how often the final score should be added to the total score. '''
-        if WHAT not in PlayStage.score_values:
+        if self.block_score or WHAT not in PlayStage.score_values:
             return
         for i in range(0, COUNT):
             twice = 1.0

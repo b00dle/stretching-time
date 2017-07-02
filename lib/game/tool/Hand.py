@@ -76,7 +76,6 @@ class Hand(GameObject):
         self._calc_pick_result()
         if self.pick_result != None:
             self.sf_object_grabbed.value = True
-            print ("grabbed object GOID" + str(self.pick_result))
 
     def setGeometrySize(self, SIZE):
         ''' sets the size of the sword geometry. '''

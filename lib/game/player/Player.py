@@ -62,6 +62,8 @@ class Player(GameObject):
 
         self.sf_mat.value = avango.gua.make_identity_mat()
 
+        self.name = 'Plunger Boy'
+
     def subtract_life(self):
         ''' subtracts a life from the player. 
             Returns False if player has no more lives to subtract.

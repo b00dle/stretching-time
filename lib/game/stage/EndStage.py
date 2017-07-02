@@ -24,7 +24,7 @@ class EndStage(GameStage):
         ''' overrides BC functionality. '''
         if self._finalize and not self.sf_next_trigger.value:
             self._game.next_stage()
-
+        
     def start(self):
         ''' overrides BC functionality. '''
         if self.is_running():
@@ -43,11 +43,21 @@ class EndStage(GameStage):
         # show all geometries which should be visible in this stage
         self._game.hand.set_active(True)
 
+        # save player score
+        self._game.save_score()
+
+        lines = ['GAME OVER.', '', 'TOP PLAYERS', '', '']
         # show outro text for game
-        if self._game.player.is_dead():
-            self._game.center_text.set_text('You lost to a bunch of muffins. LOL NOOB.')
-        else:
-            self._game.center_text.set_text('EZ PZ GG. Master of Muffins OP.')
+        top_scores = self._game.get_top_scores(15)
+        for score in top_scores:
+            first = str(score[0])
+            while len(first) < 20:
+                first += ' '
+            second = str(score[1])
+            while len(second) < 10:
+                second = ' ' + second
+            lines.append(first + ' ' + second)
+        self._game.write_text(lines, 0)
         
     def stop(self):
         ''' overrides BC functionality. '''
@@ -65,7 +75,7 @@ class EndStage(GameStage):
         self._game.hand.set_active(False)
 
         # clear center text
-        self._game.center_text.clear()
+        self._game.clear_center_text()
 
     @field_has_changed(sf_next_trigger)
     def sf_next_trigger_changed(self):

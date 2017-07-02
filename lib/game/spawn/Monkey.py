@@ -32,3 +32,6 @@ class Monkey(Spawn):
 
         # append to parent
         PARENT_NODE.Children.value.append(self.bounding_geometry)
+
+        # call parent my_constructor
+        self.super(Monkey).my_constructor()

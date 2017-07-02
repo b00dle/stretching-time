@@ -38,9 +38,6 @@ class HomingGun(GameObject):
         # spawner spawning pickable objects
         self.target_spawner = None
 
-        # geometry for visualizing picked object
-        self.selection_geometry = None
-
         self.use_count = 0
 
         self.max_use = 3
@@ -48,19 +45,8 @@ class HomingGun(GameObject):
         self.always_evaluate(True)
 
     def evaluate(self):
-        self._calc_pick_result()
-        if self.pick_result != None: # intersection found
-            parent = self.selection_geometry.Parent.value
-            if len(self.selection_geometry.Tags.value) == 0 and parent != self.pick_result.bounding_geometry:
-                self.selection_geometry.Parent.value.Children.value.remove(self.selection_geometry)
-            elif len(self.selection_geometry.Tags.value) != 0:
-                self.selection_geometry.Tags.value = []
-                self.pick_result.bounding_geometry.Children.value.append(self.selection_geometry)
-        elif self.selection_geometry != None:
-            parent = self.selection_geometry.Parent.value
-            if parent != None:
-                self.selection_geometry.Parent.value.Children.value.remove(self.selection_geometry)
-                self.selection_geometry.Tags.value = ["invisible"]
+        if self.get_active():
+            self._calc_pick_result()
         
         kill_bullets = []
         if self.projectile_spawner != None:
@@ -77,9 +63,9 @@ class HomingGun(GameObject):
         if self._barrel_exit_node != None:
             self._barrel_exit_node.Parent.value.Children.value.remove(self._barrel_exit_node)
 
-        if self.selection_geometry != None:
-            if self.selection_geometry.Parent.value != None:
-                self.selection_geometry.Parent.value.Children.value.remove(self.selection_geometry)
+        if self.pick_result != None:
+            self.pick_result.set_selected(False)
+            self.pick_result = None
 
         self.projectile_spawner.cleanup()
 
@@ -121,17 +107,6 @@ class HomingGun(GameObject):
         self._barrel_exit_node.Transform.value = avango.gua.make_trans_mat(0,0,-1.0)
         self.bounding_geometry.Children.value.append(self._barrel_exit_node)
 
-        self.selection_geometry =  _loader.create_geometry_from_file(
-            "homing_selection_geometry_GOID_"+str(self.game_object_id),
-            "data/objects/frame.obj",
-            avango.gua.LoaderFlags.DEFAULTS
-        ) 
-        self.selection_geometry.Material.value.set_uniform(
-            "Color",
-            avango.gua.Vec4(0.0,1.0,0.0,1.0)
-        )
-        self.selection_geometry.Tags.value = ["invisible"]
-
         # append to parent
         PARENT_NODE.Children.value.append(self.bounding_geometry)
 
@@ -148,6 +123,7 @@ class HomingGun(GameObject):
         if self.target_spawner == None:
             return None
 
+        prev_pick = self.pick_result
         self.pick_result = None
         min_angle = 0
         tool_pos = self.bounding_geometry.WorldTransform.value.get_translate()
@@ -160,6 +136,13 @@ class HomingGun(GameObject):
                 if self.pick_result == None or temp_angle < min_angle:
                     min_angle = temp_angle
                     self.pick_result = spawn
+        if prev_pick != None and self.pick_result != None and self.pick_result != prev_pick:
+            prev_pick.set_selected(False)
+            self.pick_result.set_selected(True)
+        elif self.pick_result != None:
+            self.pick_result.set_selected(True)
+        elif prev_pick != None:
+            prev_pick.set_selected(False)
 
     def _angle_to_ray(self, POS):
         ''' calculates the angle between vector of of pos to origin and direction of pointing. '''
@@ -204,6 +187,12 @@ class HomingGun(GameObject):
             )
 
             self.use_count += 1
+
+    def set_active(self, ACTIVE):
+        self.super(HomingGun).set_active(ACTIVE)
+        if not self.get_active() and self.pick_result != None:
+            self.pick_result.set_selected(False)
+            self.pick_result = None
 
     @field_has_changed(sf_gun_mat)
     def sf_sword_mat_changed(self):

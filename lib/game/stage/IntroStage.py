@@ -51,8 +51,8 @@ class IntroStage(GameStage):
         # show all geometries which should be visible in this stage
         self._game.hand.set_active(True)
 
-        # show intro text ffor game
-        self._game.center_text.set_text('If you are hungry do not play this game.')
+        # show intro text for game
+        self._game.write_text(['Set your player name.',' Press the button to start the game.'], 8)
         
     def stop(self):
         ''' overrides BC functionality. '''
@@ -69,7 +69,7 @@ class IntroStage(GameStage):
         # hide all geometries which should be invisible after this stage
         self._game.hand.set_active(False)
 
-        self._game.center_text.clear()
+        self._game.clear_center_text()
 
     @field_has_changed(sf_next_trigger)
     def sf_next_trigger_changed(self):

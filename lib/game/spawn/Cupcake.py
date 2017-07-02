@@ -109,6 +109,9 @@ class Cupcake(Spawn):
         PARENT_NODE.Children.value.append(self.bounding_geometry)
         PARENT_NODE.Children.value.append(self._transform_node)
 
+        # call parent my_constructor
+        self.super(Cupcake).my_constructor()
+
     def cleanup(self):
         ''' BC override. '''
         if self._cup_geometry != None:
