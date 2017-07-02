@@ -32,6 +32,14 @@ class ToolSpawner(Spawner):
 
 		self.max_auto_spawns = 1
 
+		# stores metadata for spawn types
+		# format (name, file_path, blocked)
+		self._spawn_type_info = {
+			0 : ['pewpew', 'data/textures/pewpew_coin.png', 10],
+			1 : ['homing', 'data/textures/missile_psych_stroke.png', 5],
+			2 : ['sword', 'data/textures/sword_psych_stroke.png', 3],
+		}
+
 	def my_constructor(self, PARENT_NODE = None, AUTO_SPAWN = True, VANISH_TIME = 3.0):
 		self.super(ToolSpawner).my_constructor(PARENT_NODE, AUTO_SPAWN)
 
@@ -59,8 +67,11 @@ class ToolSpawner(Spawner):
 			if self.spawn_at < 0.0:
 				self.spawn_at = time.time() + random.uniform(self.spawn_interval[0], self.spawn_interval[1])
 			elif current_time > self.spawn_at:
-				_spawn_type = random.randint(0,2)
-				self.spawn(self.auto_spawn_min_pos, self.auto_spawn_max_pos, _spawn_type)
+				type_list = []
+				for st in self._spawn_type_info:
+					type_list.extend([st for i in range(0, self._spawn_type_info[st][2])])
+				spawn_type = type_list[random.randint(0, len(type_list)-1)]
+				self.spawn(self.auto_spawn_min_pos, self.auto_spawn_max_pos, spawn_type)
 
 	def spawn(self, SPAWN_MIN = avango.gua.Vec3(), SPAWN_MAX = avango.gua.Vec3(), SPAWN_TYPE = 1):
 		''' Spawns random spawn at random location. '''
@@ -73,17 +84,13 @@ class ToolSpawner(Spawner):
 		m = avango.gua.make_trans_mat(x, y, z)
 
 		spawn = Coin()
-
 		spawn.pickable = self.spawn_pickable
-		if SPAWN_TYPE == 0:
-			tex = 'data/textures/sword_psych_stroke.png'
-			spawn.flags.append('sword')
-		elif SPAWN_TYPE == 1:
-			tex = 'data/textures/missile_psych_stroke.png'
-			spawn.flags.append('homing')
-		elif SPAWN_TYPE == 2:
-			tex = 'data/textures/pewpew_coin.png'
-			spawn.flags.append('pewpew')
+		
+		tex = ''
+		if SPAWN_TYPE in self._spawn_type_info:
+			tex = self._spawn_type_info[SPAWN_TYPE][1]
+			spawn.flags.append(self._spawn_type_info[SPAWN_TYPE][0])
+
 		spawn.my_constructor(
 			PARENT_NODE = self.spawn_root,
 			SPAWN_TRANSFORM = m,

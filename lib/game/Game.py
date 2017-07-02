@@ -10,6 +10,7 @@ from lib.game.controller.EnemySpawner import EnemySpawner
 from lib.game.controller.DestructionSpawner import DestructionSpawner
 from lib.game.controller.ToolSpawner import ToolSpawner
 from lib.game.controller.PowerUpSpawner import PowerUpSpawner
+from lib.game.controller.SchmeckleSpawner import SchmeckleSpawner
 from lib.game.player.Player import Player
 from lib.game.tool.SwordDyrion import SwordDyrion
 from lib.game.tool.PewPewGun import PewPewGun
@@ -19,6 +20,7 @@ from lib.game.stage.IntroStage import IntroStage
 from lib.game.stage.PlayStage import PlayStage
 from lib.game.stage.EndStage import EndStage
 from lib.game.misc.Text import Text
+from lib.game.spawn.Coin import Coin
 import lib.game.Globals
 
 class Game(avango.script.Script):
@@ -64,6 +66,14 @@ class Game(avango.script.Script):
         # power up spawner
         self.powerup_spawner = PowerUpSpawner()
         self.powerup_spawner.my_constructor(
+            PARENT_NODE = self.scenegraph.Root.value,
+            AUTO_SPAWN = False,
+            Z_VANISH = 2
+        )
+
+        # power up spawner
+        self.schmeckle_spawner = SchmeckleSpawner()
+        self.schmeckle_spawner.my_constructor(
             PARENT_NODE = self.scenegraph.Root.value,
             AUTO_SPAWN = False,
             Z_VANISH = 2
@@ -127,7 +137,29 @@ class Game(avango.script.Script):
         # init score text in upper right of screen
         self.score_text = Text()
         self.score_text.my_constructor(PARENT_NODE=self.screen_node, TEXT='0', SCALE=0.05)
-        self.score_text.node.Transform.value = avango.gua.make_trans_mat(1.1,0.8,0) 
+        self.score_text.node.Transform.value = avango.gua.make_trans_mat(1.1,0.8,0)
+
+        # tokenms visualizing if powerups are active
+        self.god_coin = Coin()
+        self.freeze_coin = Coin()
+        self.normaltime_coin = Coin()
+        self.twice_coin = Coin()
+        init_list = [
+            [0, self.god_coin, 'data/textures/powerups/godmode_coin_alpha.png', 'data/textures/powerups/godmode/godmode_coin_white.png'],
+            [1, self.freeze_coin, 'data/textures/powerups/freeze_coin_alpha.png', 'data/textures/powerups/freeze/freeze_coin_white.png'],
+            [2, self.normaltime_coin, 'data/textures/powerups/normaltime_coin_alpha.png', 'data/textures/powerups/normaltime/normaltime_coin_white.png'],
+            [3, self.twice_coin, 'data/textures/powerups/twice_coin_alpha.png','data/textures/powerups/twice/twice_coin_white.png']
+        ]
+        for l in init_list:
+            l[1].my_constructor(
+                PARENT_NODE = self.screen_node,
+                SPAWN_TRANSFORM = avango.gua.make_trans_mat(0.7 + 0.2*l[0], 0.6, 0) * avango.gua.make_rot_mat(180,0,1,0),
+                TEXTURE_PATH = l[2]
+            )
+            l[1].setScale(0.075)
+            l[1].movement_speed = 0.0
+            l[1].rotation_speed = 0.0
+            l[1].set_secondary_texture(l[3])
 
         self.always_evaluate(True)
 

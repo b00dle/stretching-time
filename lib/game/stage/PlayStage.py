@@ -16,7 +16,10 @@ class PlayStage(GameStage):
         'cup_kill' : 666,
         'tool_collect' : 123,
         'powerup_collect' : 420,
-        'cup_avoid' : 66
+        'cup_avoid' : 66,
+        'bronze_schmeckle' : 240,
+        'silver_schmeckle' : 483,
+        'gold_schmeckle' : 805
     }
 
     def __init__(self):
@@ -44,6 +47,7 @@ class PlayStage(GameStage):
                 self._evaluate_tool_decay()
             self._evaluate_enemy_collision()
             self._evaluate_powerups()
+            self._evaluate_schmeckles()
             self._evaluate_misc_scores()
         else:
             print("call start before evaluating stage.")#
@@ -73,6 +77,16 @@ class PlayStage(GameStage):
         self._game.powerup_spawner.max_auto_spawns = 1
         self._game.powerup_spawner.spawn_scale = 0.5
         self._game.powerup_spawner.spawn_pickable = True
+        self._game.powerup_spawner.set_spawn_type_block('repair', True)
+        self._game.powerup_spawner.set_spawn_type_block('life', True)
+
+        # configure powerup spawner
+        self._game.schmeckle_spawner.auto_spawn = True
+        self._game.schmeckle_spawner.auto_spawn_min_pos = avango.gua.Vec3(-1.5, 1.0, -70)
+        self._game.schmeckle_spawner.auto_spawn_max_pos = avango.gua.Vec3(1.5, -1.0, -70)
+        self._game.schmeckle_spawner.max_auto_spawns = 3
+        self._game.schmeckle_spawner.spawn_scale = 0.5
+        self._game.schmeckle_spawner.spawn_pickable = True
 
         # configure tool spawner
         self._game.tool_spawner.auto_spawn = True
@@ -122,6 +136,14 @@ class PlayStage(GameStage):
         # delete all existing powerup spawns
         kill_list = [key for key in self._game.powerup_spawner.spawns_dict.keys()]
         self._game.powerup_spawner.remove_spawns(kill_list)
+        self._game.powerup_spawner.set_spawn_type_block('repair', True)
+        self._game.powerup_spawner.set_spawn_type_block('life', True)
+
+        # release auto spawn (stop spawning schmeckles)
+        self._game.schmeckle_spawner.auto_spawn = False
+        # delete all existing powerup spawns
+        kill_list = [key for key in self._game.schmeckle_spawner.spawns_dict.keys()]
+        self._game.schmeckle_spawner.remove_spawns(kill_list)
 
         # release auto spawn (stop spawning tools)
         self._game.tool_spawner.auto_spawn = False
@@ -168,57 +190,43 @@ class PlayStage(GameStage):
         velocity_avg = sum_velocity / len(self._game.head_pos_buffer)
         return velocity_avg / self._game.velocity_norm
 
+    def _enable_tool(self, TOOL):
+        self._game.hand.set_active(False)
+        self._game.tool_spawner.auto_spawn = False
+        TOOL.set_active(True)
+        TOOL.use_count = 0
+        self._game.tool_spawner.remove_spawn(self._game.hand.pick_result)
+        self._game.player.add_ammo(COUNT=TOOL.max_use)
+        self._game.powerup_spawner.set_spawn_type_block('repair', False)
+        self._score('tool_collect')
+
+    def _disable_tool(self, TOOL):
+        TOOL.set_active(False)
+        self._game.hand.set_active(True)
+        self._game.tool_spawner.auto_spawn = True
+        self._game.powerup_spawner.set_spawn_type_block('repair', True)
+
     def _evaluate_tool_pick(self):
         ''' calculates selection of a tool. '''
         if self._game.hand.pick_result != None and self._game.hand.pick_result in self._game.tool_spawner.spawns_dict:
             picked_tool = self._game.tool_spawner.spawns_dict[self._game.hand.pick_result]
             if 'sword' in picked_tool.flags:
-                self._game.hand.set_active(False)
-                self._game.tool_spawner.auto_spawn = False
-                self._game.dyrion.set_active(True)
-                self._game.dyrion.use_count = 0
                 picked_tool = None
-                self._game.tool_spawner.remove_spawn(self._game.hand.pick_result)
-                self._game.player.add_ammo(COUNT=self._game.dyrion.max_use)
-                self._score('tool_collect')
+                self._enable_tool(TOOL=self._game.dyrion)
             elif 'homing' in picked_tool.flags:
-                self._game.hand.set_active(False)
-                self._game.tool_spawner.auto_spawn = False
-                self._game.homing.set_active(True)
-                self._game.homing.use_count = 0
                 picked_tool = None
-                self._game.tool_spawner.remove_spawn(self._game.hand.pick_result)
-                self._game.player.add_ammo(COUNT=self._game.homing.max_use)
-                self._score('tool_collect')
+                self._enable_tool(TOOL=self._game.homing)
             elif 'pewpew' in picked_tool.flags:
-                self._game.hand.set_active(False)
-                self._game.tool_spawner.auto_spawn = False
-                self._game.pewpew.set_active(True)
-                self._game.pewpew.use_count = 0
                 picked_tool = None
-                self._game.tool_spawner.remove_spawn(self._game.hand.pick_result)
-                self._game.player.add_ammo(COUNT=self._game.pewpew.max_use)
-                self._score('tool_collect')
+                self._enable_tool(TOOL=self._game.pewpew)
 
     def _evaluate_tool_decay(self):
-        if self._game.dyrion.get_active():
-            if self._game.dyrion.is_used_up():
-                self._game.dyrion.set_active(False)
-                self._game.hand.set_active(True)
-                self._game.tool_spawner.auto_spawn = True
-            self._evaluate_player_ammo(self._game.dyrion)            
-        if self._game.homing.get_active():
-            if self._game.homing.is_used_up():
-                self._game.homing.set_active(False)
-                self._game.hand.set_active(True)
-                self._game.tool_spawner.auto_spawn = True
-            self._evaluate_player_ammo(self._game.homing)
-        if self._game.pewpew.get_active():
-            if self._game.pewpew.is_used_up():
-                self._game.pewpew.set_active(False)
-                self._game.hand.set_active(True)
-                self._game.tool_spawner.auto_spawn = True
-            self._evaluate_player_ammo(self._game.pewpew)
+        tools = [self._game.dyrion, self._game.homing, self._game.pewpew]
+        for tool in tools:
+            if tool.get_active():
+                if tool.is_used_up():
+                    self._disable_tool(tool)
+                self._evaluate_player_ammo(tool)
 
     def _evaluate_player_ammo(self, TOOL):
         left = TOOL.max_use - TOOL.use_count
@@ -251,7 +259,7 @@ class PlayStage(GameStage):
                 self._game.dyrion.use_count += 1
 
             # evaluate collisions with homing gun 
-            if self._game.homing != None and self._game.homing.get_active():
+            if self._game.homing != None:
                 bullet_kill_list = []
                 projectile_spawner = self._game.homing.projectile_spawner
                 for bullet_id in projectile_spawner.spawns_dict:
@@ -268,7 +276,7 @@ class PlayStage(GameStage):
                     projectile_spawner.remove_spawns(bullet_kill_list)
 
             # evaluate collisions with pewpew gun 
-            if self._game.pewpew != None and self._game.pewpew.get_active():
+            if self._game.pewpew != None:
                 bullet_kill_list = []
                 projectile_spawner = self._game.pewpew.projectile_spawner
                 for bullet_id in projectile_spawner.spawns_dict:
@@ -304,6 +312,8 @@ class PlayStage(GameStage):
         if len(player_collide_list) > 0:
             if not self._powerup_clocks['god'] > 0.0:
                 self._game.player.subtract_life()
+                if self._game.powerup_spawner.get_spawn_type_block('life'):
+                    self._game.powerup_spawner.set_spawn_type_block('life', False)
             self._game.spawner.remove_spawns(player_collide_list)
 
             if self._game.player.is_dead():
@@ -315,10 +325,15 @@ class PlayStage(GameStage):
             spawn = self._game.powerup_spawner.spawns_dict[spawn_id]
             if not spawn.is_collision_trigger():
                 continue
+
             # evaluate collisions with player
             if self._game.player.intersects(spawn.get_bounding_box()):
                 collected_power_ups[spawn_id] = spawn.flags
-        
+            else:
+                active_tool = self._get_active_tool()
+                if active_tool != None and active_tool.intersects(spawn.get_bounding_box()):
+                    collected_power_ups[spawn_id] = spawn.flags
+
         if len(collected_power_ups) > 0:
             self._apply_powerups(collected_power_ups)
             self._game.powerup_spawner.remove_spawns(collected_power_ups.keys())
@@ -329,6 +344,20 @@ class PlayStage(GameStage):
                 self._powerup_clocks[clock] -= elapsed
                 if self._powerup_clocks[clock] < 0.0:
                     self._powerup_clocks[clock] = -1.0
+                    if clock == 'freeze':
+                        self._game.freeze_coin.show_secondary_texture(False)
+                    elif clock == 'god':
+                        self._game.god_coin.show_secondary_texture(False)
+                    elif clock == 'normaltime':
+                        self._game.normaltime_coin.show_secondary_texture(False)
+                    elif clock == 'twice':
+                        self._game.twice_coin.show_secondary_texture(False)
+
+
+    def _get_active_tool(self):
+        for tool in [self._game.hand, self._game.homing, self._game.dyrion, self._game.pewpew]:
+            if tool.get_active():
+                return tool
 
     def _apply_powerups(self, POWERUPS):
         for goid in POWERUPS:
@@ -343,7 +372,7 @@ class PlayStage(GameStage):
             elif 'god' in POWERUPS[goid]:
                 self._increase_powerup_clock('god', 10)
             elif 'life' in POWERUPS[goid]:
-                self._game.player.add_life()
+                self._powerup_life()
             elif 'normaltime' in POWERUPS[goid]:
                 self._increase_powerup_clock('normaltime', 10)
             elif 'repair' in POWERUPS[goid]:
@@ -388,11 +417,48 @@ class PlayStage(GameStage):
             self._game.dyrion.use_count = 0
             self._game.player.add_ammo(self._game.dyrion.max_use - self._game.player.get_ammo())
 
+    def _powerup_life(self):
+        self._game.player.add_life()
+        if self._game.player.has_max_life():
+            self._game.powerup_spawner.set_spawn_type_block('life', True)
+
     def _increase_powerup_clock(self, CLOCK, SECONDS):
         if self._powerup_clocks[CLOCK] < 0.0:
             self._powerup_clocks[CLOCK] = SECONDS
         else:
             self._powerup_clocks[CLOCK] += SECONDS 
+
+        if CLOCK == 'freeze':
+            self._game.freeze_coin.show_secondary_texture()
+        elif CLOCK == 'god':
+            self._game.god_coin.show_secondary_texture()
+        elif CLOCK == 'normaltime':
+            self._game.normaltime_coin.show_secondary_texture()
+        elif CLOCK == 'twice':
+            self._game.twice_coin.show_secondary_texture()
+
+    def _evaluate_schmeckles(self):
+        collected_schmeckles = {}
+        for spawn_id in self._game.schmeckle_spawner.spawns_dict:
+            spawn = self._game.schmeckle_spawner.spawns_dict[spawn_id]
+            if not spawn.is_collision_trigger():
+                continue
+            # evaluate collisions with player
+            if self._game.player.intersects(spawn.get_bounding_box()):
+                collected_schmeckles[spawn_id] = spawn.flags
+            else:
+                active_tool = self._get_active_tool()
+                if active_tool != None and active_tool.intersects(spawn.get_bounding_box()):
+                    collected_schmeckles[spawn_id] = spawn.flags
+        
+        if len(collected_schmeckles) > 0:
+            self._apply_schmeckle_scores(collected_schmeckles)
+            self._game.schmeckle_spawner.remove_spawns(collected_schmeckles.keys())
+
+    def _apply_schmeckle_scores(self, SCHMECKLES):
+        for shm in SCHMECKLES.values():
+            for value in shm:
+                self._score(value)
 
     def _evaluate_misc_scores(self):
         if self._game.spawner.removed_spawns > self.removed_cupcakes:
@@ -405,6 +471,8 @@ class PlayStage(GameStage):
             and what the default point score will be. 
             All default scores will be factored with the current lib.game.Globals.TIME_FACTOR.
             COUNT specifies how often the final score should be added to the total score. '''
+        if WHAT not in PlayStage.score_values:
+            return
         for i in range(0, COUNT):
             twice = 1.0
             if self._powerup_clocks['twice']:

@@ -12,6 +12,9 @@ class Coin(Spawn):
     def __init__(self):
         self.super(Coin).__init__()
 
+        self._primary_texture = ''
+        self._secondary_texture = ''
+
     def my_constructor(self,
                        PARENT_NODE = None, 
                        SPAWN_TRANSFORM = avango.gua.make_identity_mat(),
@@ -35,6 +38,7 @@ class Coin(Spawn):
 
         if len(TEXTURE_PATH) > 0:
             self.bounding_geometry.Material.value.set_uniform('ColorMap', TEXTURE_PATH)
+            self._primary_texture = TEXTURE_PATH
         elif COLOR != None:
             self.bounding_geometry.Material.value.set_uniform('Color', COLOR)
         else:
@@ -42,3 +46,17 @@ class Coin(Spawn):
 
         # append to parent
         PARENT_NODE.Children.value.append(self.bounding_geometry)
+
+    def set_texture(self, TEXTURE_PATH):
+        self.bounding_geometry.Material.value.set_uniform('ColorMap', TEXTURE_PATH)
+        self._primary_texture = TEXTURE_PATH
+
+    def set_secondary_texture(self, TEXTURE_PATH):
+        self._secondary_texture = TEXTURE_PATH
+
+    def show_secondary_texture(self, SHOW=True):
+        if len(self._secondary_texture) > 0:
+            if SHOW:
+                self.bounding_geometry.Material.value.set_uniform('ColorMap', self._secondary_texture)
+            else:
+                self.bounding_geometry.Material.value.set_uniform('ColorMap', self._primary_texture)

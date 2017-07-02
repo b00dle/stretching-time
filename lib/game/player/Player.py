@@ -82,6 +82,12 @@ class Player(GameObject):
                 return True
         return False
 
+    def has_max_life(self):
+        for h in self._life_list:
+            if h.is_dead():
+                return False
+        return True
+
     def add_ammo(self, COUNT=1):
         for i in range(len(self._ammo_list), len(self._ammo_list)+COUNT):
             a = Ammo()

@@ -65,7 +65,8 @@ class MovingObject(GameObject):
             avango.gua.make_rot_mat(a, self.rotation_axis.x, self.rotation_axis.y, self.rotation_axis.z)
         
         # apply transformation update (transformation update - local)
-        self.bounding_geometry.Transform.value = avango.gua.make_inverse_mat(self.bounding_geometry.Parent.value.WorldTransform.value) * m
+        if self.bounding_geometry.Parent.value != None:
+            self.bounding_geometry.Transform.value = avango.gua.make_inverse_mat(self.bounding_geometry.Parent.value.WorldTransform.value) * m
 
     def setScale(self, SCALE):
         ''' applies given uniform scale factor to geometry. '''
